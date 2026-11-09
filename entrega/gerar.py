@@ -1,10 +1,15 @@
 """F12 · Entregáveis da Parte 1 a partir de UMA execução do agente sobre o sinistro real.
 
-  python -m entrega.gerar
+  python -m entrega.gerar                                         # o sinistro do case → entrega/
+  python -m entrega.gerar --sinistro novo_mes.csv                 # outro mês, mesmo layout → resultados/novo_mes/
+  python -m entrega.gerar --sinistro novo_mes.csv --saida pasta/  # escolhe a pasta de saída
 
-Grava em entrega/:
+Grava na pasta de saída:
   apontamentos.csv     1 linha por item glosado: id_item, regra, cláusula, valores, justificativa e destino de envio
-  resumo_glosa.json    total glosado, por regra e por cláusula, itens em revisão humana e versões usadas
+  resumo_glosa.json    total glosado, % do sinistro, por regra e por cláusula, itens em revisão humana, quarentena e versões
+  quarentena.csv       itens que o agente NÃO auditou e o motivo (código TUSS novo, caráter fora do domínio, valor
+                       inconsistente...). Só é gravado se houver item em quarentena.
+O arquivo novo precisa ter as mesmas colunas do sinistro do case (medalhao/transformacoes.py: COLUNAS_ORIGEM).
 O agente é determinístico: duas execuções com as mesmas versões (contrato, semântica, regras) dão o mesmo arquivo.
 """
 from __future__ import annotations
@@ -24,12 +29,16 @@ COLUNAS = ["id_apontamento", "id_item", "id_conta", "regra_principal", "clausula
            "estagio_regra", "destino_envio", "versao_regra", "versao_contrato", "versao_semantica"]
 
 
-def gerar(spark, saida: Path = AQUI) -> dict:
+def gerar(spark, saida: Path = AQUI, sinistro: Path = SINISTRO) -> dict:
     from medalhao.local import executar, liberar
     from rollout import envio
 
-    out = executar(spark, str(SINISTRO), run_id="entrega-parte1")
+    out = executar(spark, str(sinistro), run_id=f"entrega-{Path(sinistro).stem}")
     try:
+        itens_lidos = out["bronze.sinistro_raw"].count()
+        vl_sinistro = out["silver.item_conta"].agg(F.sum("vl_total")).first()[0] or Decimal("0")
+        quarentena = [r.asDict() for r in out["quarantine.item_conta_rejeitado"]
+                      .select("id_item", F.array_join("motivos", "; ").alias("motivos")).orderBy("id_item").collect()]
         ap = out["gold.fato_apontamento"]
         dest = envio.decidir(ap, out["gold.fato_item_auditado"], envio.carregar_estado(), True) \
             .select("id_apontamento", "estagio_regra", "destino_envio")
@@ -38,7 +47,7 @@ def gerar(spark, saida: Path = AQUI) -> dict:
                   .select(*COLUNAS).orderBy("id_item").collect()]
     finally:
         liberar(out)
-    saida.mkdir(exist_ok=True)
+    saida.mkdir(parents=True, exist_ok=True)
     with (saida / "apontamentos.csv").open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=COLUNAS)
         w.writeheader()
@@ -55,7 +64,15 @@ def gerar(spark, saida: Path = AQUI) -> dict:
             g[k]["vl_glosado"] += ln["vl_glosado"]
         return {k: {"apontamentos": v["apontamentos"], "vl_glosado": float(v["vl_glosado"])} for k, v in sorted(g.items())}
 
-    resumo = {"apontamentos": len(linhas), "itens_distintos": len({ln["id_item"] for ln in linhas}),
+    if quarentena:
+        with (saida / "quarentena.csv").open("w", encoding="utf-8-sig", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=["id_item", "motivos"])
+            w.writeheader()
+            w.writerows(quarentena)
+    resumo = {"arquivo_sinistro": Path(sinistro).name, "itens_lidos": itens_lidos,
+              "itens_em_quarentena": len(quarentena), "vl_sinistro_auditado": float(vl_sinistro),
+              "pct_glosado_do_sinistro": round(float(total / vl_sinistro), 4) if vl_sinistro else None,
+              "apontamentos": len(linhas), "itens_distintos": len({ln["id_item"] for ln in linhas}),
               "vl_glosado_total": float(total), "por_regra": agrupar("regra_principal"),
               "por_clausula": agrupar("clausula_principal"),
               "revisao_humana_pelo_motor": sum(ln["status_envio"] == "REVISAO_HUMANA" for ln in linhas),
@@ -66,13 +83,26 @@ def gerar(spark, saida: Path = AQUI) -> dict:
 
 
 def main() -> None:
+    import argparse
+
     from medalhao.local import spark_local
+
+    ap = argparse.ArgumentParser(description="Roda o agente de glosa sobre um sinistro no layout do case.")
+    ap.add_argument("--sinistro", type=Path, help="CSV do sinistro (padrão: o arquivo do case em arvo.case/)")
+    ap.add_argument("--saida", type=Path, help="pasta de saída (padrão: entrega/ para o case, resultados/<arquivo>/ para outro)")
+    a = ap.parse_args()
+    sinistro = a.sinistro or SINISTRO
+    if not sinistro.exists():
+        raise SystemExit(f"arquivo não encontrado: {sinistro}")
+    saida = a.saida or (AQUI if a.sinistro is None else RAIZ / "resultados" / sinistro.stem)
 
     s = spark_local()
     s.sparkContext.setLogLevel("ERROR")
-    r = gerar(s)
-    print(json.dumps({k: r[k] for k in ("apontamentos", "vl_glosado_total", "por_regra", "revisao_humana_pelo_motor")},
-                     ensure_ascii=False, indent=2))
+    r = gerar(s, saida, sinistro)
+    print(json.dumps({k: r[k] for k in ("arquivo_sinistro", "itens_lidos", "itens_em_quarentena", "apontamentos",
+                                        "vl_glosado_total", "pct_glosado_do_sinistro", "por_regra",
+                                        "revisao_humana_pelo_motor")}, ensure_ascii=False, indent=2))
+    print(f"Arquivos em {saida}")
 
 
 if __name__ == "__main__":

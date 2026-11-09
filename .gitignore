@@ -10,3 +10,5 @@ venv/
 dados_sinteticos/
 contratos/runs/
 .DS_Store
+# Execuções do agente sobre outros arquivos (python -m entrega.gerar --sinistro ...)
+resultados/

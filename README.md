@@ -7,6 +7,8 @@ Este é um case de seleção da Arvo. O agente audita a conta hospitalar contra 
 - **Precisão de 94,4% e recall de 90,0%** contra o gabarito.
 - **Nenhuma regra vai a envio automático antes do shadow.**
 
+**Para entender o projeto:** [`COMO_FUNCIONA.md`](COMO_FUNCIONA.md) explica o raciocínio, o agente passo a passo, como rodar com um mês novo e o papel do Databricks.
+
 **Onde estão as respostas:**
 - As 8 perguntas da Parte 1: [`entrega/RESPOSTAS_CASE.md`](entrega/RESPOSTAS_CASE.md).
 - A Parte 2: [memo](https://claude.ai/artifact/Y3i8MpGuPeFnxUxc7BxnCf) e [deck](https://claude.ai/artifact/Duao3bxGMDvN5R9Uq6jTTs).
@@ -16,6 +18,8 @@ Este é um case de seleção da Arvo. O agente audita a conta hospitalar contra 
 python -m entrega.rodar_tudo
 ```
 Gera os entregáveis em cerca de 4 minutos, localmente, sem chamar provedor de IA externo (a extração do contrato usa o replay determinístico). Com `--testes`, roda também a suíte de 188 testes.
+
+Para rodar o agente sobre outro mês no mesmo layout: `python -m entrega.gerar --sinistro caminho/arquivo.csv` (saída em `resultados/`).
 
 Requisitos: Python 3.12, Java 11+ e:
 ```bash

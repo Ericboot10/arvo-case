@@ -1,6 +1,6 @@
 # Case Arvo × Parthenon · Hospital São Rafael: respostas
 
-**Valor glosado total: R$ 121.948,93 em 369 itens** (10,2% do sinistro de R$ 1.194.396,92).
+**Valor glosado total: R$ 121.948,93 em 369 itens** (10,2% do sinistro de R$ 1.194.396,92). É valor identificado, não economia, e é alto por construção do extrato: ver [como ler os 10,2%](#4-valor-de-glosa-total-f6).
 **Precisão 94,4% e recall 90,0%** contra o gabarito. Prioridade: precisão.
 **Go-live:** nenhuma regra vai a envio automático antes do shadow.
 
@@ -88,6 +88,13 @@ Relatório completo: [`RELATORIO_AVALIACAO.md`](../avaliacao_cientifica/RELATORI
 | **Total** | **369** | **R$ 121.948,93** |
 
 Do total, 9 itens (R$ 3.087,98) são taxa de urgência em conta de Pronto Socorro com caráter eletivo. Eles **vão para revisão humana** (AMB-01).
+
+**Como ler os 10,2%: é alto, e não deve ser projetado para a rede.**
+- **O extrato foi feito para testar o agente.** O gabarito rotula 263 itens, e 150 deles (57%) são indevidos. Nenhuma auditoria real acha erro em mais da metade do que olha. As quatro regras disparam dezenas de vezes no mesmo mês. A taxa diz mais sobre o exercício do que sobre a rede.
+- **Um hospital pode estar fora da média sem puxar a rede.** O contrato tem tabela de preços (Anexo I) e pacotes (Anexo II) desde 01/01/2025. O erro típico é o faturamento do hospital não ter absorvido o contrato: preço antigo e taxa de sala cobrada fora do pacote, exatamente o que R1 e R2 pegam. É um erro sistemático, que deve cair depois dos primeiros ciclos de glosa. Na Parte 2, a rede inteira fica em 2,77% identificado.
+- **É valor identificado, não economia.** No funil da Parte 2, de cada R$ 1 identificado, só R$ 0,17 vira economia (0,48 ÷ 2,77).
+- **Nem todo o valor tem a mesma força.** R$ 51 mil (42%) vêm da R2, que glosa a taxa de sala inteira, e R$ 26,6 mil da R4, a regra mais frágil em recurso (seção 5). A parte mais firme é a R1, que glosa só o excedente sobre a tabela: R$ 39,9 mil, 3,3% do sinistro.
+- **O que acompanhar:** a taxa de glosa por hospital, mês a mês. Se ela não cair depois que o hospital recebe as primeiras glosas, deixa de ser erro de implantação e vira assunto de relacionamento com o prestador.
 
 ## 5. Defensabilidade em recurso (F2, F6)
 

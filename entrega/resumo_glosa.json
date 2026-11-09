@@ -1,4 +1,9 @@
 {
+  "arquivo_sinistro": "sinistro-hospital-saorafael.csv",
+  "itens_lidos": 1696,
+  "itens_em_quarentena": 0,
+  "vl_sinistro_auditado": 1194396.92,
+  "pct_glosado_do_sinistro": 0.1021,
   "apontamentos": 369,
   "itens_distintos": 369,
   "vl_glosado_total": 121948.93,
