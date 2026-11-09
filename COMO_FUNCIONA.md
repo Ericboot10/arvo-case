@@ -9,6 +9,7 @@ Guia para entender e explicar o projeto: o raciocínio, o que o agente faz com o
 4. [Rodar outro mês](#4-rodar-outro-mês)
 5. [Por que tantas pastas](#5-por-que-tantas-pastas)
 6. [O Databricks](#6-o-databricks)
+7. [O agente analista](#7-o-agente-analista)
 
 ---
 
@@ -281,3 +282,16 @@ A cada envio ao repositório, o GitHub Actions roda os 188 testes. Os jobs de de
 - **Agendas ligadas:** o pipeline roda quando chega arquivo, o painel atualiza e os alertas avisam o time quando um indicador sai da faixa.
 - **Três ambientes separados:** dev (com dado sintético, para quem não pode ver dado de paciente), stg e prod. Cada um tem o próprio catálogo e roda com uma conta de serviço, não com o usuário de uma pessoa.
 - **Rollout regra a regra:** shadow por algumas semanas com auditoria por amostra, depois envio com revisão humana e, por fim, envio automático até um teto de valor. Uma regra cuja taxa de reversão em recurso passa de 5% é desligada automaticamente.
+
+---
+
+## 7. O agente analista
+
+Um agente que responde perguntas de negócio ("quanto glosamos por cláusula?", "qual a precisão do motor?", "quanto falta para a meta?") consultando a camada semântica. Detalhes em [`ia/agente/README.md`](ia/agente/README.md).
+
+- **Genie é a prioridade para os dados.** Ele entende as metric views publicadas no Unity Catalog e roda dentro da plataforma. O espaço é configurado por código ([`ia/agente/genie/espaco.yaml`](ia/agente/genie/espaco.yaml)), com instruções tiradas do glossário e das decisões AMB.
+- **O orquestrador é trocável:** a API do Claude, com fallback para um modelo hospedado no Databricks. Ele escolhe as ferramentas e escreve a resposta, citando a fonte de cada número.
+- **Se o Genie falhar,** o agente consulta as metric views de forma estruturada: escolhe medida e dimensão do catálogo, e o SQL é montado por código.
+- **O agente não glosa.** Ele explica, investiga e responde. Quem glosa continua sendo o motor.
+- **O modelo nunca recebe dado de pessoa, conta ou data de atendimento:** o resultado de cada consulta é reduzido antes de chegar a ele.
+

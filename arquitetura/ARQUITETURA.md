@@ -573,10 +573,10 @@ flowchart LR
 | fator | **M23** taxa_envio | Enviado à operadora ÷ identificado, só ligadas. Alavanca da auditoria médica (Dr. Ary). | `fato_funil_economia` | hoje | — |
 | fator | **M24** taxa_registro | Registrado no prestador ÷ enviado à operadora. Alavanca de integração (Alana, TI). | `fato_funil_economia` | hoje | — |
 | guardrail | **M05** pct_contas_com_glosa | Contas com ao menos um item glosado ÷ contas auditadas. Atrito com o prestador. | `fato_item_auditado` | hoje | fora da banda histórica (±3σ) do prestador |
-| guardrail | **M10** precisao_auditada | Glosas confirmadas pelo auditor ÷ glosas auditadas, PONDERADO pelo peso amostral (Horvitz–Thompson, F8). Sempre com IC. | `fato_auditoria_amostral` | hoje | limite inferior do IC 95% < 0.95 |
+| guardrail | **M10** precisao_auditada | Glosas confirmadas pelo auditor ÷ glosas auditadas, PONDERADO pelo peso amostral (Horvitz–Thompson, F8). Sempre com IC. Difere da precisão da amostra do gabarito (ops.v_precisao_recall), que não é ponderada. | `fato_auditoria_amostral` | hoje | limite inferior do IC 95% < 0.95 |
 | guardrail | **M12** taxa_recurso | Glosas recorridas ÷ glosas registradas no prestador. | `fato_glosa_ciclo` | futura | acima do benchmark da regra |
 | guardrail | **M13** taxa_reversao | Recursos procedentes ÷ recursos julgados. É a precisão real em campo. | `fato_glosa_ciclo` | futura | > 0.05 |
-| guardrail | **M25** taxa_indevido_nao_detectado | Itens NÃO glosados que o auditor considera indevidos ÷ não glosados, PONDERADO pelo peso amostral (estimador de recall, F8). | `fato_auditoria_amostral` | hoje | tendência de alta por 2 rodadas |
+| guardrail | **M25** taxa_indevido_nao_detectado | Itens NÃO glosados que o auditor considera indevidos ÷ não glosados, PONDERADO pelo peso amostral (F8). Entra na estimativa do recall populacional, mas NÃO é 1 − recall (recall = indevidos glosados ÷ todos os indevidos, em ops.v_precisao_recall). | `fato_auditoria_amostral` | hoje | tendência de alta por 2 rodadas |
 | guardrail | **M26** violacoes_invariantes | Apontamentos sem cláusula, sem evidência, com glosa ≤ 0 ou maior que o cobrado. Deve ser 0 (bloqueia o envio). | `fato_apontamento` | hoje | > 0 |
 | diagnostico | **M03** taxa_glosa | Valor glosado ÷ valor apresentado. Plausibilidade (banda esperada por prestador/regra). NÃO fatiar por cláusula. | `fato_item_auditado` | hoje | — |
 | diagnostico | **M06** gap_cobrado_vs_pactuado | Soma do excedente sobre o teto em TODOS os itens com preço pactuado, glosados ou não. Responde "qual procedimento tem maior gap em relação ao contrato". | `fato_item_auditado` | hoje | — |
@@ -593,7 +593,7 @@ flowchart LR
 | diagnostico | **M34** conversao_glosa_a_glosa | Efetivado ÷ identificado calculado glosa a glosa (o funil aberto por regra e prestador). | `fato_glosa_ciclo` | futura | — |
 | diagnostico | **M35** perda_registro_por_motivo | Valor enviado e não registrado no prestador, por motivo (integração, rejeição, prazo). | `fato_glosa_ciclo` | futura | — |
 | sanidade | **M08** aderencia_semantica | Itens com código mapeado a conceito aprovado ÷ itens apresentados. Meta 100%. | `fato_item_auditado` | hoje | = 1.0 |
-| sanidade | **M09** taxa_conflito_semantico | Itens com conflito semântico (p. ex. regime PRONTO_SOCORRO com caráter ELETIVO) ÷ itens. | `fato_item_auditado` | hoje | — |
+| sanidade | **M09** taxa_conflito_semantico | Itens com conflito semântico (p. ex. regime PRONTO_SOCORRO com caráter ELETIVO) ÷ todos os itens. A condição já está no numerador; filtrar por regime ou caráter muda o denominador (o filtro pela própria condição dá 100%). | `fato_item_auditado` | hoje | — |
 | base | **M01** valor_apresentado | Soma do valor cobrado pelo prestador. | `fato_item_auditado` | hoje | — |
 | base | **M02** valor_glosado | Soma do valor glosado pelo agente (identificado, ainda não efetivado). | `fato_item_auditado` | hoje | — |
 | base | **M04** itens_glosados | Quantidade de itens com glosa. | `fato_item_auditado` | hoje | — |

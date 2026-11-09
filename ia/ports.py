@@ -75,3 +75,68 @@ class DocumentParserPort(Protocol):
     nome: str
 
     def parse(self, caminho: Path) -> ParsedDoc: ...
+
+
+# ===================================================================================== agente analista (ia/agente)
+@dataclass
+class ResultadoConsulta:
+    """Resposta de qualquer ConsultaDadosPort (Genie, SQL sobre a camada semântica)."""
+    ok: bool
+    fonte: str                                   # adapter que respondeu (ex.: "genie", "sql_semantico")
+    pergunta: str
+    sql: str | None = None                       # o SQL que gerou o número: toda resposta é auditável
+    colunas: list[str] = field(default_factory=list)
+    linhas: list[list] = field(default_factory=list)
+    texto: str | None = None                     # resumo em linguagem natural, quando a fonte devolve um
+    erro: str | None = None
+    latencia_ms: float | None = None
+    referencia: dict = field(default_factory=dict)   # ids da fonte (conversa/mensagem do Genie, statement_id)
+
+
+@runtime_checkable
+class ConsultaDadosPort(Protocol):
+    """Descoberta de dados sobre a camada semântica. Prioridade: Genie; alternativa: SQL determinístico."""
+    nome: str
+    perimetro: str     # onde a consulta roda ("plataforma" para Genie e SQL warehouse)
+
+    def consultar(self, pergunta: str) -> ResultadoConsulta: ...
+
+
+@dataclass
+class ChamadaFerramenta:
+    id: str
+    nome: str
+    argumentos: dict
+
+
+@dataclass
+class TurnoAgente:
+    """Uma resposta do modelo orquestrador, já normalizada entre provedores."""
+    ok: bool
+    texto: str
+    chamadas: list[ChamadaFerramenta]
+    record: LLMCallRecord
+    nativo: list | None = None    # conteúdo bruto do provedor, reenviado sem alteração no turno seguinte (mesmo adapter)
+    erro: str | None = None
+
+
+@runtime_checkable
+class AgenteLLMPort(Protocol):
+    """Modelo orquestrador com chamada de ferramentas. A conversa é neutra (ia/agente/agente.py: Transcricao);
+    cada adapter traduz para o formato do seu provedor."""
+    nome: str
+    provedor: str
+    familia: str
+    modelo: str
+    perimetro: str
+
+    def turno(self, system: str, conversa: list[dict], ferramentas: list[dict], run_id: str) -> TurnoAgente: ...
+
+
+@runtime_checkable
+class ExecutorSQLPort(Protocol):
+    """Executa SQL de leitura num warehouse. Usado pela consulta estruturada à camada semântica (consultar_metrica)."""
+    nome: str
+    perimetro: str
+
+    def executar(self, sql: str) -> tuple[list[str], list[list]]: ...

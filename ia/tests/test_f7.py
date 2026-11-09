@@ -176,7 +176,7 @@ def test_view_sql_tem_os_mesmos_indicadores_do_python():
 # ============================================================== governança de prompts
 def test_prompts_versionados_e_travados():
     assert prompts.verificar() == []
-    assert {p["prompt_id"] for p in prompts.inventario()} == {"extracao_contrato", "juiz_extracao", "sugerir_conceito"}
+    assert {p["prompt_id"] for p in prompts.inventario()} == {"extracao_contrato", "juiz_extracao", "sugerir_conceito", "agente_analista"}
 
 
 def test_mudanca_silenciosa_de_prompt_e_detectada(tmp_path, monkeypatch):

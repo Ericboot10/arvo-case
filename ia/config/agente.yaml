@@ -1,0 +1,18 @@
+# Agente analista (ia/agente). Provedor, modelo e fonte de dados ficam aqui, não no código.
+versao: 1
+databricks:
+  perfil: arvo-free                         # local: perfil da CLI; no workspace, a identidade do job (perfil vazio)
+  catalogo: arvo_dev
+  warehouse: "Serverless Starter Warehouse"
+genie:
+  estado: ia/agente/genie/estado.json       # space_id gravado por `python -m ia.agente.genie publicar`
+  espaco: ia/agente/genie/espaco.yaml       # o espaço como código: tabelas, instruções, exemplos e benchmark
+# Orquestrador: tentado em ordem. Claude (externo) recebe só dado agregado, de catálogo ou contratual.
+# O modelo hospedado no Databricks roda dentro da plataforma e serve de fallback sem chave externa.
+orquestradores:
+  - {nome: claude_opus, tipo: anthropic, modelo: claude-opus-5-5, familia: anthropic, effort: high,
+     server_fallbacks: true, perimetro: externo}
+  - {nome: databricks_gpt_oss, tipo: chat_tools, modelo: databricks-gpt-oss-120b, familia: openai_oss,
+     provedor: databricks_gateway, perimetro: plataforma}
+max_turnos: 8
+telemetria: contratos/runs/agente/llm_calls.jsonl

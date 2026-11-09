@@ -85,7 +85,7 @@ measures:
     comment: "M08 · sanidade · Itens com código mapeado a conceito aprovado ÷ itens apresentados. Meta 100%."
   - name: taxa_conflito_semantico
     expr: COUNT_IF(conflito_semantico) / NULLIF(COUNT(1), 0)
-    comment: "M09 · sanidade · Itens com conflito semântico (p. ex. regime PRONTO_SOCORRO com caráter ELETIVO) ÷ itens."
+    comment: "M09 · sanidade · Itens com conflito semântico (p. ex. regime PRONTO_SOCORRO com caráter ELETIVO) ÷ todos os itens. A condição já está no numerador; filtrar por regime ou caráter muda o denominador (o filtro pela própria condição dá 100%)."
 $$;
 
 -- -----------------------------------------------------------------------------------------------------
@@ -268,8 +268,8 @@ fields:
 measures:
   - name: precisao_auditada
     expr: SUM(CASE WHEN estrato = 'GLOSADO' AND auditor_indevido THEN peso_amostral END) / NULLIF(SUM(CASE WHEN estrato = 'GLOSADO' THEN peso_amostral END), 0)
-    comment: "M10 · guardrail · Glosas confirmadas pelo auditor ÷ glosas auditadas, PONDERADO pelo peso amostral (Horvitz–Thompson, F8). Sempre com IC."
+    comment: "M10 · guardrail · Glosas confirmadas pelo auditor ÷ glosas auditadas, PONDERADO pelo peso amostral (Horvitz–Thompson, F8). Sempre com IC. Difere da precisão da amostra do gabarito (ops.v_precisao_recall), que não é ponderada."
   - name: taxa_indevido_nao_detectado
     expr: SUM(CASE WHEN estrato = 'NAO_GLOSADO' AND auditor_indevido THEN peso_amostral END) / NULLIF(SUM(CASE WHEN estrato = 'NAO_GLOSADO' THEN peso_amostral END), 0)
-    comment: "M25 · guardrail · Itens NÃO glosados que o auditor considera indevidos ÷ não glosados, PONDERADO pelo peso amostral (estimador de recall, F8)."
+    comment: "M25 · guardrail · Itens NÃO glosados que o auditor considera indevidos ÷ não glosados, PONDERADO pelo peso amostral (F8). Entra na estimativa do recall populacional, mas NÃO é 1 − recall (recall = indevidos glosados ÷ todos os indevidos, em ops.v_precisao_recall)."
 $$;

@@ -61,6 +61,7 @@ Para testar sem conta corporativa, use a **Databricks Free Edition** com o alvo 
 | F5 · medalhão | [`medalhao/`](medalhao/) | Bronze → silver → gold com expectations; Lakeflow e harness local com o mesmo código |
 | F6 · motor | [`motor/`](motor/) | Regras como dado, sobre colunas semânticas; justificativa com cláusula e cálculo |
 | F7 · IA | [`ia/`](ia/) | Ports & adapters, roteador com política de dados, golden set por provedor, telemetria |
+| Agente analista | [`ia/agente/`](ia/agente/) | Perguntas de negócio respondidas pela camada semântica: Genie para os dados, Claude (ou modelo do Databricks) para orquestrar |
 | F8 · avaliação | [`avaliacao_cientifica/`](avaliacao_cientifica/) | IC, estimativa populacional, divergências, adjudicação cega, matriz de custo |
 | F9 · sanidade | [`sanidade/`](sanidade/) | 38 indicadores (negócio primeiro), alertas SQL, painel AI/BI, portão de envio |
 | F10 · rollout | [`rollout/`](rollout/) | Estágios por regra, teto de valor pela matriz de custo, rebaixamento automático |
