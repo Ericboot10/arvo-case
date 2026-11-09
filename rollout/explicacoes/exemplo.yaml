@@ -1,0 +1,7 @@
+# Explicações de regressão (gate de stg, rollout/regressao.py). Um arquivo por versão do motor, junto do PR da mudança.
+# Cada explicação: `motivo` + pelo menos um filtro (tipo, regra_antes, regra_depois, id_item). Filtro vazio é recusado.
+versao_motor: "exemplo"
+explicacoes:
+  - motivo: "Exemplo: R3 desligada até o AMB-02 (escopo 'conta' do pacote) ser decidido"
+    tipo: REMOVIDO
+    regra_antes: R3

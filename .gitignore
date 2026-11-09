@@ -1,0 +1,12 @@
+# Estado local da CLI do Databricks (bundle)
+.databricks/
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+# Saídas geradas ao rodar localmente (não são entregáveis)
+dados_sinteticos/
+contratos/runs/
+.DS_Store

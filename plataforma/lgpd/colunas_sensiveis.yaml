@@ -1,0 +1,20 @@
+# Registro de colunas com dado pessoal (LGPD). Fonte da verdade para máscaras e para o teste de conformidade.
+# ADR-006 (minimização): o identificador em claro existe SÓ na bronze. Da silver em diante, só o pseudônimo (hash).
+versao: 2
+mascara_padrao: ops.mask_id_pessoa
+classificacao:
+  id_beneficiario: {tipo: identificador_pessoa, sensivel: true, motivo: "vinculado a dado de saúde (atendimento, procedimento)"}
+  id_beneficiario_hash: {tipo: pseudonimo, sensivel: false, motivo: "sha2('arvo:' || id) 16 chars; mesma fórmula da máscara, por isso casa entre camadas"}
+colunas_mascaradas:            # (tabela relativa ao catálogo, coluna). Máscara obrigatória em stg/prod
+  - {tabela: bronze.sinistro_raw, coluna: id_beneficiario}
+proibido_em:                   # o identificador em claro NÃO pode existir nestes schemas (testado contra o modelo)
+  - silver
+  - quarantine
+  - gold
+  - gold_shadow
+  - semantic
+nunca_enviar_a_llm_externo:    # política da F3/F7: o sinistro não sai do perímetro
+  - bronze.sinistro_raw
+  - silver.item_conta
+  - gold.fato_item
+  - gold.fato_item_auditado

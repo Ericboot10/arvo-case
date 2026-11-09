@@ -1,0 +1,88 @@
+# Configuração da F3 (extração de contrato). O core lê SÓ isto para saber quais provedores usar.
+# Trocar de provedor ou modelo = editar este arquivo. Nenhuma linha de código muda.
+versao_config: 1
+ambiente: dev
+
+prompt_arquivo: extracao_contrato_v1.md
+params:                      # parâmetros PEDIDOS. Cada adapter registra o que aplicou e o que ignorou
+  max_output_tokens: 16000
+  temperature: 0.0           # modelos de raciocínio atuais não aceitam; fica registrado em params_ignorados
+  reasoning_effort: high
+
+orcamento:                   # token budget por run (antes de chamar o provedor) + teto de chamadas (anti-loop)
+  max_tokens_run: 250000
+  max_chamadas_run: 10
+
+precos_usd_por_mtok:         # só para custo ESTIMADO na telemetria; revisar na tabela oficial antes de reportar custo
+  claude-opus-5-5: {input: 4.00, output: 20.00, cache_read: 0.20}
+  claude-sonnet-5-5: {input: 2.00, output: 10.00, cache_read: 0.20}
+  claude-haiku-5-5: {input: 0.10, output: 0.50}
+
+# Slots de extração. A e B DEVEM ser de famílias diferentes (independência do consenso).
+# Cada slot é uma cadeia de fallback: se o primeiro falhar (erro, truncamento, recusa, schema inválido), tenta o próximo.
+modos:
+  real:
+    A: [anthropic_opus, gateway_claude]
+    B: [openai_direto, gateway_gpt]
+    juiz: [gateway_gemini, anthropic_sonnet]
+  simulado:                  # demo e testes SEM chave de API: fixtures gravadas, marcadas como simuladas
+    A: [replay_fiel]
+    B: [replay_com_erro]
+    juiz: [replay_juiz]
+
+adapters:
+  anthropic_opus:
+    classe: anthropic
+    perimetro: externo
+    modelo: claude-opus-5-5
+    familia: anthropic
+    effort: high
+    server_fallbacks: true   # beta server-side-fallback-2026-07-01; desligar em Bedrock/Vertex/Foundry e no Batches API
+    suporta: {temperature: false, top_p: false, seed: false, reasoning_effort: true}
+  anthropic_sonnet:
+    classe: anthropic
+    perimetro: externo
+    modelo: claude-sonnet-5-5
+    familia: anthropic
+    effort: high
+    server_fallbacks: true
+    suporta: {temperature: false, top_p: false, seed: false, reasoning_effort: true}
+  openai_direto:
+    classe: openai_responses
+    perimetro: externo
+    modelo: DEFINIR_MODELO_OPENAI     # preencher com um modelo atual que suporte structured outputs
+    familia: openai
+    suporta: {temperature: false, top_p: false, seed: false, reasoning_effort: true}
+  gateway_claude:            # Databricks AI Gateway / Model Serving (OpenAI-compatível)
+    classe: openai_compat
+    perimetro: externo
+    modelo: DEFINIR_ENDPOINT_CLAUDE   # ATENÇÃO: databricks-claude-*-5-5 retornam 400 com response_format em Chat Completions
+    familia: anthropic
+    suporta: {temperature: true, top_p: true, seed: false, reasoning_effort: false}
+  gateway_gpt:
+    classe: openai_compat
+    perimetro: externo
+    modelo: DEFINIR_ENDPOINT_GPT      # ex.: endpoint de modelo aberto ou externo no workspace
+    familia: openai
+    suporta: {temperature: true, top_p: true, seed: false, reasoning_effort: false}
+  gateway_gemini:
+    classe: openai_compat
+    perimetro: externo
+    modelo: DEFINIR_ENDPOINT_GEMINI   # Gemini via Vertex AI como external model no Databricks
+    familia: google
+    suporta: {temperature: true, top_p: true, seed: false, reasoning_effort: false}
+  replay_fiel:
+    classe: replay
+    perimetro: local
+    fixture: fixtures/replay_fiel.json
+    familia: simulado_familia_1
+  replay_com_erro:
+    classe: replay
+    perimetro: local
+    fixture: fixtures/replay_com_erro.json
+    familia: simulado_familia_2
+  replay_juiz:
+    classe: replay
+    perimetro: local
+    fixture: fixtures/replay_juiz.json
+    familia: simulado_familia_3

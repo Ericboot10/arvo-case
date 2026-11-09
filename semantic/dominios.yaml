@@ -1,0 +1,92 @@
+# Domínios canônicos e mapeamento dos valores de origem.
+# Regra: o código de negócio usa SEMPRE o valor canônico; o valor de origem é preservado na silver
+# (coluna *_origem) para auditoria e para não perder distinções que hoje não importam mas podem importar amanhã.
+versao: 0.2.0
+status: rascunho_pendente_G2
+
+dominios:
+
+  carater_atendimento:
+    descricao: >
+      Natureza clínica do atendimento, informada pelo prestador na guia. NÃO é o local/regime
+      do atendimento (ver regime_atendimento). Termo do glossário: T14.
+    coluna_origem: carater_atendimento
+    dono: especialista_contas_medicas
+    valores_canonicos:
+      - id: ELETIVO
+        definicao: Atendimento programado, sem caráter de urgência ou emergência.
+      - id: URGENCIA_EMERGENCIA
+        definicao: >
+          Atendimento de urgência OU de emergência. Os dois são unificados porque a Cláusula 4.1
+          trata ambos da mesma forma ("urgência ou emergência"). A distinção clínica (ver T15/T16)
+          é preservada em `valor_origem` caso uma inteligência técnica futura precise dela.
+    mapeamento_origem:
+      - valor_origem: "Eletivo"
+        canonico: ELETIVO
+      - valor_origem: "Urgência"
+        canonico: URGENCIA_EMERGENCIA
+    sinonimos:            # usados pela camada semântica / agent metadata (Genie)
+      ELETIVO: [eletivo, eletiva, programado, agendado]
+      URGENCIA_EMERGENCIA: [urgência, urgencia, emergência, emergencia, "urgência/emergência"]
+    nao_confundir_com:
+      - "Pronto Socorro (é regime/local, não caráter) — ver AMB-01"
+      - "Taxa de urgência/emergência (é um ITEM cobrado, não um caráter) — ver T18"
+    pendencias: [AMB-01, AMB-07]
+
+  regime_atendimento:
+    descricao: >
+      Local/regime em que a conta foi gerada. Vem da coluna `tipo_conta` da origem.
+      Termo do glossário: T17.
+    coluna_origem: tipo_conta
+    dono: especialista_contas_medicas
+    valores_canonicos:
+      - id: INTERNACAO
+        definicao: Conta de internação hospitalar.
+      - id: AMBULATORIAL
+        definicao: Conta de atendimento ambulatorial (sem internação).
+      - id: PRONTO_SOCORRO
+        definicao: Conta gerada no pronto-socorro / pronto-atendimento.
+    mapeamento_origem:
+      - valor_origem: "Internação"
+        canonico: INTERNACAO
+      - valor_origem: "Ambulatorial"
+        canonico: AMBULATORIAL
+      - valor_origem: "Pronto Socorro"
+        canonico: PRONTO_SOCORRO
+    sinonimos:
+      INTERNACAO: [internação, internacao, internado, hospitalização]
+      AMBULATORIAL: [ambulatorial, ambulatório, consultório]
+      PRONTO_SOCORRO: [pronto socorro, pronto-socorro, PS, pronto atendimento, PA]
+    nao_confundir_com:
+      - "Caráter de atendimento: um atendimento em PS pode estar registrado como Eletivo (114 itens no sinistro) — ver AMB-01"
+    pendencias: [AMB-01, AMB-12]
+
+  tipo_item_origem:
+    descricao: >
+      Classificação do item ENVIADA PELA ORIGEM. É mantida apenas como atributo; a classificação
+      de negócio é o `conceito` (map_tuss_conceito.yaml), porque a origem classifica diária como
+      "Taxa", enquanto o contrato (Cl. 3.4) trata diárias como categoria própria — ver AMB-09.
+    coluna_origem: tipo_item
+    dono: engenheiro_dados
+    valores_canonicos:
+      - {id: PROCEDIMENTO, definicao: Procedimento médico/cirúrgico.}
+      - {id: TAXA, definicao: Taxa hospitalar (na origem inclui diárias).}
+      - {id: SADT, definicao: Serviço auxiliar de diagnóstico e terapia.}
+      - {id: MATERIAL, definicao: Material hospitalar.}
+      - {id: MEDICAMENTO, definicao: Medicamento.}
+    mapeamento_origem:
+      - {valor_origem: "Procedimento", canonico: PROCEDIMENTO}
+      - {valor_origem: "Taxa", canonico: TAXA}
+      - {valor_origem: "SADT", canonico: SADT}
+      - {valor_origem: "Material", canonico: MATERIAL}
+      - {valor_origem: "Medicamento", canonico: MEDICAMENTO}
+    pendencias: [AMB-09]
+
+# Formatos de origem (contrato de dados com a silver — F5)
+formatos_origem:
+  decimal: "vírgula como separador decimal, sem separador de milhar (p. ex. \"4128,27\")"
+  data: "texto por extenso em PT-BR (p. ex. \"14 de junho de 2025\") → DATE"
+  encoding: "UTF-8 com BOM"
+  chave_item: id_item
+  chave_conta: id_conta
+  regra_consistencia: "vl_total = qtd × vl_unitario (tolerância 0,01)"

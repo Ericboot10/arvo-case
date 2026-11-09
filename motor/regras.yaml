@@ -1,0 +1,128 @@
+# =====================================================================================================
+# F6 · Regras de glosa COMO DADOS. O motor (motor/motor.py) é genérico: avalia estas expressões.
+#
+# Regra de ouro do comitê: as condições só podem usar COLUNAS SEMÂNTICAS e PAPÉIS CONTRATUAIS do item enriquecido
+# (lista `colunas_permitidas`), nunca colunas cruas da origem (tipo_conta, desc_item, cod_tuss literal...).
+# O teste motor/tests garante isso. Para outro hospital, mudam o contrato (F3) e a semântica (F2), não estas regras.
+#
+# Campos:
+#   condicao        expressão Spark SQL booleana sobre o item enriquecido
+#   valor           quanto glosar (INTEGRAL = vl_cobrado; EXCEDENTE = vl_excedente_potencial)
+#   referencia      quanto o contrato admite para o item (vai para vl_referencia)
+#   prioridade      menor = fundamento principal quando o item cai em mais de uma regra (AMB-14)
+#   revisao_humana  condições que marcam o apontamento para revisão (status_envio = REVISAO_HUMANA)
+#   justificativa   template determinístico; {campo} é substituído, e valores vl_* saem em R$ pt-BR
+#   evidencia       itens de evidência gravados no apontamento
+# =====================================================================================================
+versao_regras: 1.0.0
+
+colunas_permitidas:
+  - conta_tem_pacote             # conta contém procedimento com papel PROCEDIMENTO_EM_PACOTE
+  - e_sala_do_pacote_da_conta    # item é a taxa de sala DO PORTE do pacote presente na conta (Anexo II)
+  - e_sala_outro_porte           # taxa de sala de outro porte numa conta com pacote (AMB-11)
+  - e_material_incluso_pacote    # papel ITEM_INCLUSO_NO_PACOTE (material de rotina, Cl. 3.2 b)
+  - e_taxa_condicionada          # papel TAXA_CONDICIONADA_AO_CARATER
+  - carater_permitido_item       # caráter canônico do atendimento está entre os permitidos pela taxa
+  - tem_preco_pactuado
+  - vl_excedente_potencial
+  - vl_unitario
+  - vl_teto_unitario
+  - vl_cobrado
+  - qtd
+  - regime
+  - conceito
+  - carater_canonico
+  - conflito_semantico
+  - dentro_vigencia
+
+pre_condicao_global: "dentro_vigencia"     # AMB-13: sem contrato vigente na data do atendimento, nenhuma glosa
+
+regras:
+  - id: R2
+    nome: taxa_sala_inclusa_no_pacote
+    clausula: "3.3"
+    clausulas_base: ["3.2(a)", "3.3"]
+    tipo: PACOTE_ITEM_INCLUSO
+    tipo_glosa: INTEGRAL
+    prioridade: 1
+    defensabilidade: forte_com_ressalva       # ataque: "porte correspondente" e escopo "conta" (AMB-02)
+    condicao: "conta_tem_pacote AND e_sala_do_pacote_da_conta"
+    valor: "vl_cobrado"
+    referencia: "0"
+    revisao_humana: []
+    justificativa: >-
+      Glosa integral de {vl_glosado} no item {id_item}: taxa de sala (cód. {cod_tuss}) inclusa no pacote do
+      procedimento {procedimentos_pacote} (Anexo II), cobrado na mesma conta {id_conta}. Fundamento: Cláusulas 3.2(a) e 3.3.
+    evidencia: ["conta:{id_conta}", "pacote:{procedimentos_pacote}", "contrato:{versao_contrato}"]
+
+  - id: R2B
+    nome: taxa_sala_outro_porte_em_conta_com_pacote
+    clausula: "3.3"
+    clausulas_base: ["3.2(a)", "3.3"]
+    tipo: PACOTE_ITEM_INCLUSO
+    tipo_glosa: INTEGRAL
+    prioridade: 1
+    defensabilidade: fragil                   # a letra fala em "porte correspondente" (AMB-11)
+    condicao: "conta_tem_pacote AND e_sala_outro_porte"
+    valor: "vl_cobrado"
+    referencia: "0"
+    revisao_humana:
+      - {motivo: "AMB-11 porte da sala diferente do porte do pacote", condicao: "true"}
+    justificativa: >-
+      Glosa integral de {vl_glosado} no item {id_item}: taxa de sala (cód. {cod_tuss}) cobrada em conta {id_conta} com
+      procedimento em pacote {procedimentos_pacote}, cuja sala está inclusa (Anexo II). Porte divergente: revisão humana.
+      Fundamento: Cláusulas 3.2(a) e 3.3.
+    evidencia: ["conta:{id_conta}", "pacote:{procedimentos_pacote}", "contrato:{versao_contrato}"]
+
+  - id: R3
+    nome: material_rotina_incluso_no_pacote
+    clausula: "3.3"
+    clausulas_base: ["3.2(b)", "3.3"]
+    tipo: PACOTE_ITEM_INCLUSO
+    tipo_glosa: INTEGRAL
+    prioridade: 1
+    defensabilidade: muito_forte              # lista fechada de códigos e "integralmente glosada"
+    condicao: "conta_tem_pacote AND e_material_incluso_pacote"
+    valor: "vl_cobrado"
+    referencia: "0"
+    revisao_humana: []
+    justificativa: >-
+      Glosa integral de {vl_glosado} no item {id_item}: material de rotina (cód. {cod_tuss}) incluso no pacote do
+      procedimento {procedimentos_pacote}, cobrado na mesma conta {id_conta}. Fundamento: Cláusulas 3.2(b) e 3.3.
+    evidencia: ["conta:{id_conta}", "pacote:{procedimentos_pacote}", "contrato:{versao_contrato}"]
+
+  - id: R4
+    nome: taxa_urgencia_em_atendimento_eletivo
+    clausula: "4.2"
+    clausulas_base: ["4.1", "4.2"]
+    tipo: TAXA_CONDICIONADA_CARATER
+    tipo_glosa: INTEGRAL
+    prioridade: 1
+    defensabilidade: forte_fragil_em_ps       # depende do caráter registrado; em PS vira discussão clínica (AMB-01)
+    condicao: "e_taxa_condicionada AND NOT carater_permitido_item"
+    valor: "vl_cobrado"
+    referencia: "0"
+    revisao_humana:
+      - {motivo: "AMB-01 taxa de urgência em Pronto Socorro com caráter eletivo", condicao: "regime = 'PRONTO_SOCORRO'"}
+    justificativa: >-
+      Glosa integral de {vl_glosado} no item {id_item}: taxa de urgência/emergência (cód. {cod_tuss}) cobrada em
+      atendimento de caráter {carater_canonico} registrado na conta {id_conta}. Fundamento: Cláusulas 4.1 e 4.2.
+    evidencia: ["conta:{id_conta}", "carater:{carater_canonico}", "regime:{regime}", "contrato:{versao_contrato}"]
+
+  - id: R1
+    nome: preco_acima_do_pactuado
+    clausula: "2.2"
+    clausulas_base: ["2.1", "2.2"]
+    tipo: PRECO_TETO
+    tipo_glosa: EXCEDENTE
+    prioridade: 2                             # subsidiária quando há regra integral (defesa em camadas)
+    defensabilidade: mais_forte               # número contra tabela assinada; glosa só do excedente
+    condicao: "tem_preco_pactuado AND vl_excedente_potencial > 0"
+    valor: "vl_excedente_potencial"
+    referencia: "vl_teto_unitario * qtd"
+    revisao_humana:
+      - {motivo: "E30 preço acima de 5× o teto (possível erro de digitação)", condicao: "vl_unitario > 5 * vl_teto_unitario"}
+    justificativa: >-
+      Glosa parcial de {vl_glosado} no item {id_item} (cód. {cod_tuss}): valor unitário cobrado {vl_unitario} acima do
+      pactuado {vl_teto_unitario} no Anexo I, multiplicado por {qtd} unidade(s). Fundamento: Cláusula 2.2.
+    evidencia: ["anexo_i:{cod_tuss}={vl_teto_unitario}", "contrato:{versao_contrato}"]

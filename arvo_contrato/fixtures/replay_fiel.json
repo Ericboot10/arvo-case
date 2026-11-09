@@ -1,0 +1,207 @@
+{
+  "contrato": {
+    "id_contrato": "PRT-2025-0417",
+    "operadora": "PARTHENON SAÚDE OPERADORA DE PLANOS DE SAÚDE S.A.",
+    "prestador": "HOSPITAL SÃO RAFAEL LTDA",
+    "modelo_remuneracao": "fee_for_service",
+    "vigencia_inicio": "2025-01-01",
+    "vigencia_meses": 24,
+    "quote_id": "Contrato nº PRT-2025-0417",
+    "quote_partes": "De um lado, PARTHENON SAÚDE OPERADORA DE PLANOS DE SAÚDE S.A., inscrita no CNPJ sob o nº 12.345.678/0001-90, com sede em Curitiba/PR, doravante denominada OPERADORA; e de outro, HOSPITAL SÃO RAFAEL LTDA, inscrito",
+    "quote_modelo": "Modalidade fee-for-service",
+    "quote_vigencia": "vigorará por 24 (vinte e quatro) meses a contar de 1º de janeiro de 2025"
+  },
+  "anexo_i": [
+    {
+      "codigo": "31001012",
+      "descricao": "Colecistectomia videolaparoscópica",
+      "tipo": "Procedimento",
+      "valor_teto": 4200.0,
+      "quote": "31001012 | Colecistectomia videolaparoscópica | Procedimento | R$ 4.200,00"
+    },
+    {
+      "codigo": "31309062",
+      "descricao": "Herniorrafia inguinal unilateral",
+      "tipo": "Procedimento",
+      "valor_teto": 3100.0,
+      "quote": "31309062 | Herniorrafia inguinal unilateral | Procedimento | R$ 3.100,00"
+    },
+    {
+      "codigo": "30715016",
+      "descricao": "Artroscopia cirúrgica de joelho",
+      "tipo": "Procedimento",
+      "valor_teto": 3800.0,
+      "quote": "30715016 | Artroscopia cirúrgica de joelho | Procedimento | R$ 3.800,00"
+    },
+    {
+      "codigo": "10101039",
+      "descricao": "Consulta médica em consultório",
+      "tipo": "Procedimento",
+      "valor_teto": 120.0,
+      "quote": "10101039 | Consulta médica em consultório | Procedimento | R$ 120,00"
+    },
+    {
+      "codigo": "20103077",
+      "descricao": "Taxa de sala cirúrgica - porte 4",
+      "tipo": "Taxa",
+      "valor_teto": 1250.0,
+      "quote": "20103077 | Taxa de sala cirúrgica - porte 4 | Taxa | R$ 1.250,00"
+    },
+    {
+      "codigo": "20103050",
+      "descricao": "Taxa de sala cirúrgica - porte 2",
+      "tipo": "Taxa",
+      "valor_teto": 620.0,
+      "quote": "20103050 | Taxa de sala cirúrgica - porte 2 | Taxa | R$ 620,00"
+    },
+    {
+      "codigo": "60012010",
+      "descricao": "Diária de enfermaria",
+      "tipo": "Taxa",
+      "valor_teto": 480.0,
+      "quote": "60012010 | Diária de enfermaria | Taxa | R$ 480,00"
+    },
+    {
+      "codigo": "60023011",
+      "descricao": "Diária de UTI adulto",
+      "tipo": "Taxa",
+      "valor_teto": 1600.0,
+      "quote": "60023011 | Diária de UTI adulto | Taxa | R$ 1.600,00"
+    },
+    {
+      "codigo": "99999001",
+      "descricao": "Taxa de urgência/emergência",
+      "tipo": "Taxa",
+      "valor_teto": 350.0,
+      "quote": "99999001 | Taxa de urgência/emergência | Taxa | R$ 350,00"
+    },
+    {
+      "codigo": "40304361",
+      "descricao": "Hemograma completo",
+      "tipo": "SADT",
+      "valor_teto": 18.0,
+      "quote": "40304361 | Hemograma completo | SADT | R$ 18,00"
+    },
+    {
+      "codigo": "40901416",
+      "descricao": "Tomografia computadorizada de crânio",
+      "tipo": "SADT",
+      "valor_teto": 320.0,
+      "quote": "40901416 | Tomografia computadorizada de crânio | SADT | R$ 320,00"
+    },
+    {
+      "codigo": "40808157",
+      "descricao": "Ultrassonografia de abdome total",
+      "tipo": "SADT",
+      "valor_teto": 140.0,
+      "quote": "40808157 | Ultrassonografia de abdome total | SADT | R$ 140,00"
+    },
+    {
+      "codigo": "70520020",
+      "descricao": "Fio de sutura agulhado",
+      "tipo": "Material",
+      "valor_teto": 45.0,
+      "quote": "70520020 | Fio de sutura agulhado | Material | R$ 45,00"
+    },
+    {
+      "codigo": "70402600",
+      "descricao": "Compressa cirúrgica estéril",
+      "tipo": "Material",
+      "valor_teto": 9.0,
+      "quote": "70402600 | Compressa cirúrgica estéril | Material | R$ 9,00"
+    },
+    {
+      "codigo": "70451938",
+      "descricao": "Cateter venoso central duplo lúmen",
+      "tipo": "Material",
+      "valor_teto": 280.0,
+      "quote": "70451938 | Cateter venoso central duplo lúmen | Material | R$ 280,00"
+    },
+    {
+      "codigo": "90070020",
+      "descricao": "Cefazolina 1g - frasco-ampola",
+      "tipo": "Medicamento",
+      "valor_teto": 16.0,
+      "quote": "90070020 | Cefazolina 1g - frasco-ampola | Medicamento | R$ 16,00"
+    },
+    {
+      "codigo": "90050010",
+      "descricao": "Dipirona 500 mg — ampola",
+      "tipo": "Medicamento",
+      "valor_teto": 4.0,
+      "quote": "90050010 | Dipirona 500 mg — ampola | Medicamento | R$ 4,00"
+    }
+  ],
+  "anexo_ii": [
+    {
+      "codigo_procedimento": "31001012",
+      "taxa_sala_codigo": "20103077",
+      "materiais_rotina": [
+        "70520020",
+        "70402600"
+      ],
+      "quote": "31001012 Colecistectomia videolaparoscópica 20103077 (porte 4 70520020 · 70402600"
+    },
+    {
+      "codigo_procedimento": "31309062",
+      "taxa_sala_codigo": "20103050",
+      "materiais_rotina": [
+        "70520020",
+        "70402600"
+      ],
+      "quote": "31309062 Herniorrafia inguinal unilateral 20103050 (porte 2 70520020 · 70402600"
+    },
+    {
+      "codigo_procedimento": "30715016",
+      "taxa_sala_codigo": "20103077",
+      "materiais_rotina": [
+        "70520020",
+        "70402600"
+      ],
+      "quote": "30715016 Artroscopia cirúrgica de joelho 20103077 (porte 4 70520020 · 70402600"
+    }
+  ],
+  "taxas_condicionadas": [
+    {
+      "codigo": "99999001",
+      "carater_permitido": [
+        "URGENCIA_EMERGENCIA"
+      ],
+      "clausula": "4.1",
+      "quote": "4.1. A taxa de urgência/emergência (cód. 99999001) é devida exclusivamente em atendimentos cujo caráter registrado seja de urgência ou emergência."
+    }
+  ],
+  "regras": [
+    {
+      "clausula": "2.2",
+      "tipo": "PRECO_TETO",
+      "tipo_glosa": "EXCEDENTE",
+      "quote": "2.2. Os valores cobrados não poderão exceder os valores pactuados no Anexo I."
+    },
+    {
+      "clausula": "2.3",
+      "tipo": "EXCLUSAO_AUDITORIA",
+      "tipo_glosa": "NENHUMA",
+      "quote": "2.3. Itens não constantes do Anexo I dependem de autorização prévia e negociação específica, não sendo objeto da auditoria automática de preço de que trata esta cláusula."
+    },
+    {
+      "clausula": "3.3",
+      "tipo": "PACOTE_ITEM_INCLUSO",
+      "tipo_glosa": "INTEGRAL",
+      "quote": "3.3. É vedada a cobrança em separado dos itens listados na subcláusula 3.2 quando a conta contiver procedimento em regime de pacote. A cobrança apartada de tais itens será integralmente glosada."
+    },
+    {
+      "clausula": "3.4",
+      "tipo": "ITEM_EXCLUIDO_PACOTE",
+      "tipo_glosa": "NENHUMA",
+      "quote": "3.4. Demais itens (p. ex., diárias de enfermaria e de UTI, materiais especiais como cateteres, medicamentos e SADT) não integram o pacote e permanecem passíveis de cobrança conforme o Anexo I."
+    },
+    {
+      "clausula": "4.2",
+      "tipo": "TAXA_CONDICIONADA_CARATER",
+      "tipo_glosa": "INTEGRAL",
+      "quote": "4.2. É indevida - e será integralmente glosada - a cobrança da taxa de urgência/emergência em atendimentos de caráter eletivo."
+    }
+  ],
+  "campos_nao_encontrados": []
+}

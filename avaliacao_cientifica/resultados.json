@@ -1,0 +1,684 @@
+{
+  "amostra": {
+    "precisao": 0.9440559440559441,
+    "precisao_ic95": [
+      0.8934955947273875,
+      0.9713827646947821
+    ],
+    "recall": 0.9,
+    "recall_ic95": [
+      0.8415651883318529,
+      0.9384586161736859
+    ],
+    "f1": 0.9215017064846417,
+    "TP": 135,
+    "FP": 8,
+    "FN": 15,
+    "TN": 105,
+    "precisao_rs": 0.9281922841107006,
+    "recall_rs_limite_inferior": 0.742110666476574,
+    "vl_tp": 45598.04,
+    "vl_fp": 3527.5999999999995,
+    "vl_fn_cobrado": 15845.679999999998,
+    "precisao_rs_ic95": [
+      0.8463025141746778,
+      0.991641132766322
+    ],
+    "recall_rs_ic95": [
+      0.5837033285315891,
+      0.9051013258574127
+    ]
+  },
+  "por_regra": [
+    {
+      "regra": "R1",
+      "glosados_rotulados": 67,
+      "confirmados": 62,
+      "precisao": 0.9253731343283582,
+      "precisao_ic95": [
+        0.83690963207223,
+        0.9677039508336773
+      ],
+      "vl_glosado_rotulado": 13926.48,
+      "valor_medio": 227.86,
+      "modo": "REVISAO_HUMANA",
+      "custo_fp": 105.57,
+      "custo_esperado_auto": 17.22,
+      "p_equilibrio_envio": 0.3166,
+      "p_equilibrio_auto": 0.8106
+    },
+    {
+      "regra": "R2",
+      "glosados_rotulados": 22,
+      "confirmados": 20,
+      "precisao": 0.9090909090909091,
+      "precisao_ic95": [
+        0.7218505315839417,
+        0.9747045710090046
+      ],
+      "vl_glosado_rotulado": 23394.680000000004,
+      "valor_medio": 1021.64,
+      "modo": "REVISAO_HUMANA",
+      "custo_fp": 264.33,
+      "custo_esperado_auto": 73.52,
+      "p_equilibrio_envio": 0.2055,
+      "p_equilibrio_auto": 0.9243
+    },
+    {
+      "regra": "R3",
+      "glosados_rotulados": 25,
+      "confirmados": 24,
+      "precisao": 0.96,
+      "precisao_ic95": [
+        0.8045593626380625,
+        0.9929037664980127
+      ],
+      "vl_glosado_rotulado": 1772.4600000000003,
+      "valor_medio": 65.71,
+      "modo": "REVISAO_HUMANA",
+      "custo_fp": 73.14,
+      "custo_esperado_auto": 14.29,
+      "p_equilibrio_envio": 0.5268,
+      "p_equilibrio_auto": 0.7266
+    },
+    {
+      "regra": "R4",
+      "glosados_rotulados": 29,
+      "confirmados": 29,
+      "precisao": 1.0,
+      "precisao_ic95": [
+        0.8830302015002593,
+        1.0
+      ],
+      "vl_glosado_rotulado": 10032.019999999999,
+      "valor_medio": 345.32,
+      "modo": "REVISAO_HUMANA",
+      "custo_fp": 129.06,
+      "custo_esperado_auto": 15.1,
+      "p_equilibrio_envio": 0.2721,
+      "p_equilibrio_auto": 0.845
+    }
+  ],
+  "pop_ingenua": {
+    "valida": false,
+    "precisao": 0.9371529317882206,
+    "precisao_ic95": [
+      0.8891277110986255,
+      0.9764372964516331
+    ],
+    "recall": 0.8659960919254915,
+    "recall_ic95": [
+      0.8005852422579561,
+      0.9271187150264273
+    ],
+    "estratos_cobertos": 16,
+    "estratos_total": 16,
+    "itens_populacao_cobertos": 1696,
+    "itens_populacao": 1696,
+    "glosas_estimadas_pela_amostra": 790.7313827934518,
+    "glosas_reais_do_motor": 369,
+    "indevidos_estimados_populacao": 855.7039004577797
+  },
+  "pop": {
+    "valida": true,
+    "precisao": 0.9450227799379444,
+    "precisao_ic95": [
+      0.9076526476768392,
+      0.9790930246258984
+    ],
+    "recall": 0.6545500833072557,
+    "recall_ic95": [
+      0.5749638089773353,
+      0.7417161113240682
+    ],
+    "estratos_cobertos": 29,
+    "estratos_total": 30,
+    "itens_populacao_cobertos": 1685,
+    "itens_populacao": 1696,
+    "glosas_estimadas_pela_amostra": 369.00000000000006,
+    "glosas_reais_do_motor": 369,
+    "indevidos_estimados_populacao": 532.7528247115204
+  },
+  "divergencias": [
+    {
+      "id_item": "IT00564",
+      "tipo": "FP",
+      "regra_motor": "R1",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa parcial de R$ 51,55 no item IT00564 (cód. 60012010): valor unitário cobrado R$ 531,55 acima do pactuado R$ 480,00 no Anexo I, multiplicado por 1 unidade(s). Fundamento: Cláusula 2.2.",
+      "vl_em_jogo": 51.55
+    },
+    {
+      "id_item": "IT00800",
+      "tipo": "FP",
+      "regra_motor": "R2",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa integral de R$ 602,29 no item IT00800: taxa de sala (cód. 20103050) inclusa no pacote do procedimento 31309062 (Anexo II), cobrado na mesma conta G00127. Fundamento: Cláusulas 3.2(a) e 3.3.",
+      "vl_em_jogo": 602.29
+    },
+    {
+      "id_item": "IT00970",
+      "tipo": "FP",
+      "regra_motor": "R1",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa parcial de R$ 60,86 no item IT00970 (cód. 60012010): valor unitário cobrado R$ 540,86 acima do pactuado R$ 480,00 no Anexo I, multiplicado por 1 unidade(s). Fundamento: Cláusula 2.2.",
+      "vl_em_jogo": 60.86
+    },
+    {
+      "id_item": "IT01140",
+      "tipo": "FP",
+      "regra_motor": "R1",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa parcial de R$ 100,37 no item IT01140 (cód. 60012010): valor unitário cobrado R$ 580,37 acima do pactuado R$ 480,00 no Anexo I, multiplicado por 1 unidade(s). Fundamento: Cláusula 2.2.",
+      "vl_em_jogo": 100.37
+    },
+    {
+      "id_item": "IT01243",
+      "tipo": "FP",
+      "regra_motor": "R1",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa parcial de R$ 62,48 no item IT01243 (cód. 10101039): valor unitário cobrado R$ 151,24 acima do pactuado R$ 120,00 no Anexo I, multiplicado por 2 unidade(s). Fundamento: Cláusula 2.2.",
+      "vl_em_jogo": 62.48
+    },
+    {
+      "id_item": "IT00136",
+      "tipo": "FP",
+      "regra_motor": "R2",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa integral de R$ 1.226,03 no item IT00136: taxa de sala (cód. 20103077) inclusa no pacote do procedimento 30715016 (Anexo II), cobrado na mesma conta G00021. Fundamento: Cláusulas 3.2(a) e 3.3.",
+      "vl_em_jogo": 1226.03
+    },
+    {
+      "id_item": "IT00228",
+      "tipo": "FP",
+      "regra_motor": "R1",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa parcial de R$ 1.334,22 no item IT00228 (cód. 30715016): valor unitário cobrado R$ 5.134,22 acima do pactuado R$ 3.800,00 no Anexo I, multiplicado por 1 unidade(s). Fundamento: Cláusula 2.2.",
+      "vl_em_jogo": 1334.22
+    },
+    {
+      "id_item": "IT00522",
+      "tipo": "FP",
+      "regra_motor": "R3",
+      "causa": "REGRA_CONTRATUAL_LITERAL",
+      "hipotese": "erro de rotulagem do gabarito (condição objetiva)",
+      "evidencia": "Glosa integral de R$ 89,80 no item IT00522: material de rotina (cód. 70520020) incluso no pacote do procedimento 31309062, cobrado na mesma conta G00082. Fundamento: Cláusulas 3.2(b) e 3.3.",
+      "vl_em_jogo": 89.8
+    },
+    {
+      "id_item": "IT00851",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.6% do teto; código repetido 2× na conta",
+      "vl_em_jogo": 473.17
+    },
+    {
+      "id_item": "IT01074",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.3% do teto; código repetido 3× na conta",
+      "vl_em_jogo": 471.7
+    },
+    {
+      "id_item": "IT01097",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 99.1% do teto",
+      "vl_em_jogo": 35.68
+    },
+    {
+      "id_item": "IT01666",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.4% do teto; conflito semântico PS × Eletivo",
+      "vl_em_jogo": 275.6
+    },
+    {
+      "id_item": "IT00196",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 97.4% do teto; código repetido 3× na conta",
+      "vl_em_jogo": 467.44
+    },
+    {
+      "id_item": "IT00979",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 97.4% do teto",
+      "vl_em_jogo": 623.64
+    },
+    {
+      "id_item": "IT00987",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 99.7% do teto; é o próprio procedimento do pacote",
+      "vl_em_jogo": 3789.15
+    },
+    {
+      "id_item": "IT01047",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 99.1% do teto; é o próprio procedimento do pacote",
+      "vl_em_jogo": 3073.2
+    },
+    {
+      "id_item": "IT01077",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 99.4% do teto",
+      "vl_em_jogo": 15.91
+    },
+    {
+      "id_item": "IT01167",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 97.5% do teto",
+      "vl_em_jogo": 7.8
+    },
+    {
+      "id_item": "IT00492",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.4% do teto; é o próprio procedimento do pacote",
+      "vl_em_jogo": 4131.92
+    },
+    {
+      "id_item": "IT00143",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.4% do teto; código repetido 3× na conta",
+      "vl_em_jogo": 472.23
+    },
+    {
+      "id_item": "IT00284",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.2% do teto",
+      "vl_em_jogo": 1256.56
+    },
+    {
+      "id_item": "IT00442",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 98.9% do teto",
+      "vl_em_jogo": 474.6
+    },
+    {
+      "id_item": "IT01384",
+      "tipo": "FN",
+      "regra_motor": NaN,
+      "causa": "SEM_BASE_CONTRATUAL",
+      "hipotese": "ruído de rotulagem ou regra fora do contrato (AMB-03)",
+      "evidencia": "preço 99.0% do teto",
+      "vl_em_jogo": 277.08
+    }
+  ],
+  "concentracao": {
+    "estatistica_chi2": 5.107502021787736,
+    "p_valor_permutacao": 0.8502,
+    "taxa_sim_entre_nao_glosados": 0.125,
+    "taxa_por_conceito": {
+      "CONSULTA": 0.0,
+      "DIARIA_ENFERMARIA": 0.143,
+      "MATERIAL_COMPRESSA": 0.0,
+      "MATERIAL_ESPECIAL": 0.0,
+      "MEDICAMENTO_ANALGESICO": 0.077,
+      "MEDICAMENTO_ANTIMICROBIANO": 0.091,
+      "PROCEDIMENTO_CIRURGICO": 0.273,
+      "SADT_IMAGEM": 0.167,
+      "SADT_LABORATORIO": 0.067,
+      "TAXA_SALA_CIRURGICA": 0.0,
+      "TAXA_URGENCIA_EMERGENCIA": 0.0
+    },
+    "n": 120
+  },
+  "pacote_adjudicacao": {
+    "casos": 46,
+    "divergencias": 23,
+    "controles": 23
+  },
+  "cenarios": {
+    "gabarito": {
+      "amostra": {
+        "precisao": 0.9440559440559441,
+        "precisao_ic95": [
+          0.8934955947273875,
+          0.9713827646947821
+        ],
+        "recall": 0.9,
+        "recall_ic95": [
+          0.8415651883318529,
+          0.9384586161736859
+        ],
+        "f1": 0.9215017064846417,
+        "TP": 135,
+        "FP": 8,
+        "FN": 15,
+        "TN": 105
+      },
+      "populacao": {
+        "valida": true,
+        "precisao": 0.9450227799379444,
+        "precisao_ic95": [
+          0.9075497942932328,
+          0.9797057264050902
+        ],
+        "recall": 0.6545500833072557,
+        "recall_ic95": [
+          0.5746446801504923,
+          0.741300502931089
+        ],
+        "estratos_cobertos": 29,
+        "estratos_total": 30,
+        "itens_populacao_cobertos": 1685,
+        "itens_populacao": 1696,
+        "glosas_estimadas_pela_amostra": 369.00000000000006,
+        "glosas_reais_do_motor": 369,
+        "indevidos_estimados_populacao": 532.7528247115204
+      },
+      "por_regra": [
+        {
+          "regra": "R1",
+          "glosados_rotulados": 67,
+          "confirmados": 62,
+          "precisao": 0.9253731343283582,
+          "precisao_ic95": [
+            0.83690963207223,
+            0.9677039508336773
+          ],
+          "vl_glosado_rotulado": 13926.48,
+          "valor_medio": 227.86,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 105.57,
+          "custo_esperado_auto": 17.22,
+          "p_equilibrio_envio": 0.3166,
+          "p_equilibrio_auto": 0.8106
+        },
+        {
+          "regra": "R2",
+          "glosados_rotulados": 22,
+          "confirmados": 20,
+          "precisao": 0.9090909090909091,
+          "precisao_ic95": [
+            0.7218505315839417,
+            0.9747045710090046
+          ],
+          "vl_glosado_rotulado": 23394.680000000004,
+          "valor_medio": 1021.64,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 264.33,
+          "custo_esperado_auto": 73.52,
+          "p_equilibrio_envio": 0.2055,
+          "p_equilibrio_auto": 0.9243
+        },
+        {
+          "regra": "R3",
+          "glosados_rotulados": 25,
+          "confirmados": 24,
+          "precisao": 0.96,
+          "precisao_ic95": [
+            0.8045593626380625,
+            0.9929037664980127
+          ],
+          "vl_glosado_rotulado": 1772.4600000000003,
+          "valor_medio": 65.71,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 73.14,
+          "custo_esperado_auto": 14.29,
+          "p_equilibrio_envio": 0.5268,
+          "p_equilibrio_auto": 0.7266
+        },
+        {
+          "regra": "R4",
+          "glosados_rotulados": 29,
+          "confirmados": 29,
+          "precisao": 1.0,
+          "precisao_ic95": [
+            0.8830302015002593,
+            1.0
+          ],
+          "vl_glosado_rotulado": 10032.019999999999,
+          "valor_medio": 345.32,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 129.06,
+          "custo_esperado_auto": 15.1,
+          "p_equilibrio_envio": 0.2721,
+          "p_equilibrio_auto": 0.845
+        }
+      ]
+    },
+    "contrato": {
+      "amostra": {
+        "precisao": 1.0,
+        "precisao_ic95": [
+          0.9738394125777184,
+          0.9999999999999999
+        ],
+        "recall": 1.0,
+        "recall_ic95": [
+          0.9738394125777184,
+          0.9999999999999999
+        ],
+        "f1": 1.0,
+        "TP": 143,
+        "FP": 0,
+        "FN": 0,
+        "TN": 120
+      },
+      "populacao": {
+        "valida": true,
+        "precisao": 1.0,
+        "precisao_ic95": [
+          1.0,
+          1.0
+        ],
+        "recall": 1.0,
+        "recall_ic95": [
+          1.0,
+          1.0
+        ],
+        "estratos_cobertos": 29,
+        "estratos_total": 30,
+        "itens_populacao_cobertos": 1685,
+        "itens_populacao": 1696,
+        "glosas_estimadas_pela_amostra": 369.00000000000006,
+        "glosas_reais_do_motor": 369,
+        "indevidos_estimados_populacao": 369.00000000000006
+      },
+      "por_regra": [
+        {
+          "regra": "R1",
+          "glosados_rotulados": 67,
+          "confirmados": 67,
+          "precisao": 1.0,
+          "precisao_ic95": [
+            0.9457738606086981,
+            0.9999999999999998
+          ],
+          "vl_glosado_rotulado": 13926.48,
+          "valor_medio": 227.86,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 105.57,
+          "custo_esperado_auto": 5.72,
+          "p_equilibrio_envio": 0.3166,
+          "p_equilibrio_auto": 0.8106
+        },
+        {
+          "regra": "R2",
+          "glosados_rotulados": 22,
+          "confirmados": 22,
+          "precisao": 1.0,
+          "precisao_ic95": [
+            0.8513451253913791,
+            1.0
+          ],
+          "vl_glosado_rotulado": 23394.680000000004,
+          "valor_medio": 1021.64,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 264.33,
+          "custo_esperado_auto": 39.29,
+          "p_equilibrio_envio": 0.2055,
+          "p_equilibrio_auto": 0.9243
+        },
+        {
+          "regra": "R3",
+          "glosados_rotulados": 25,
+          "confirmados": 25,
+          "precisao": 1.0,
+          "precisao_ic95": [
+            0.8668077490609515,
+            0.9999999999999999
+          ],
+          "vl_glosado_rotulado": 1772.4600000000003,
+          "valor_medio": 65.71,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 73.14,
+          "custo_esperado_auto": 9.74,
+          "p_equilibrio_envio": 0.5268,
+          "p_equilibrio_auto": 0.7266
+        },
+        {
+          "regra": "R4",
+          "glosados_rotulados": 29,
+          "confirmados": 29,
+          "precisao": 1.0,
+          "precisao_ic95": [
+            0.8830302015002593,
+            1.0
+          ],
+          "vl_glosado_rotulado": 10032.019999999999,
+          "valor_medio": 345.32,
+          "modo": "REVISAO_HUMANA",
+          "custo_fp": 129.06,
+          "custo_esperado_auto": 15.1,
+          "p_equilibrio_envio": 0.2721,
+          "p_equilibrio_auto": 0.845
+        }
+      ]
+    }
+  },
+  "plano_amostral": {
+    "glosado_por_regra": {
+      "R1": {
+        "N": 175,
+        "n": 91
+      },
+      "R2": {
+        "N": 50,
+        "n": 40
+      },
+      "R3": {
+        "N": 67,
+        "n": 50
+      },
+      "R4": {
+        "N": 77,
+        "n": 55
+      }
+    },
+    "nao_glosado": {
+      "N": 1327,
+      "n_total": 360,
+      "por_conceito": {
+        "DIARIA_ENFERMARIA": 79,
+        "SADT_IMAGEM": 59,
+        "SADT_LABORATORIO": 44,
+        "MEDICAMENTO_ANALGESICO": 43,
+        "PROCEDIMENTO_CIRURGICO": 39,
+        "MEDICAMENTO_ANTIMICROBIANO": 23,
+        "CONSULTA": 19,
+        "MATERIAL_ESPECIAL": 14,
+        "TAXA_URGENCIA_EMERGENCIA": 10,
+        "TAXA_SALA_CIRURGICA": 10,
+        "MATERIAL_COMPRESSA": 10,
+        "MATERIAL_SUTURA": 10
+      }
+    },
+    "parametros": {
+      "p_precisao": 0.98,
+      "margem_precisao": 0.02,
+      "p_fn": 0.05,
+      "margem_fn": 0.02,
+      "minimo_estrato": 10
+    }
+  },
+  "enriquecimento": [
+    {
+      "cod_tuss": "20103077",
+      "populacao": 0.019,
+      "gabarito": 0.061,
+      "razao": 3.127
+    },
+    {
+      "cod_tuss": "70520020",
+      "populacao": 0.026,
+      "gabarito": 0.061,
+      "razao": 2.345
+    },
+    {
+      "cod_tuss": "99999001",
+      "populacao": 0.065,
+      "gabarito": 0.114,
+      "razao": 1.759
+    },
+    {
+      "cod_tuss": "70402600",
+      "populacao": 0.032,
+      "gabarito": 0.046,
+      "razao": 1.433
+    },
+    {
+      "cod_tuss": "20103050",
+      "populacao": 0.022,
+      "gabarito": 0.027,
+      "razao": 1.22
+    },
+    {
+      "cod_tuss": "31001012",
+      "populacao": 0.037,
+      "gabarito": 0.042,
+      "razao": 1.126
+    }
+  ],
+  "volume": {
+    "itens": 1696,
+    "rotulados": 263,
+    "glosas_motor": 369,
+    "vl_glosado_motor": 121948.93
+  }
+}

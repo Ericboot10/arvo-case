@@ -1,0 +1,99 @@
+# Mapa código TUSS → conceito de negócio.
+# Chave de negócio = código TUSS. A descrição NUNCA é chave (há variações de grafia entre origem e contrato).
+# `descricoes_observadas` serve para detectar variações novas (teste semântico falha se surgir uma desconhecida).
+versao: 0.2.0
+status: rascunho_pendente_G2
+dono: especialista_contas_medicas
+vigencia_inicio: "2025-01-01"
+
+codigos:
+  - codigo: "31001012"
+    descricao_canonica: Colecistectomia videolaparoscópica
+    descricoes_observadas: [Colecistectomia videolaparoscópica]
+    tipo_item_origem: PROCEDIMENTO
+    conceito: PROCEDIMENTO_CIRURGICO
+  - codigo: "31309062"
+    descricao_canonica: Herniorrafia inguinal unilateral
+    descricoes_observadas: [Herniorrafia inguinal unilateral]
+    tipo_item_origem: PROCEDIMENTO
+    conceito: PROCEDIMENTO_CIRURGICO
+  - codigo: "30715016"
+    descricao_canonica: Artroscopia cirúrgica de joelho
+    descricoes_observadas: [Artroscopia cirúrgica de joelho]
+    tipo_item_origem: PROCEDIMENTO
+    conceito: PROCEDIMENTO_CIRURGICO
+  - codigo: "10101039"
+    descricao_canonica: Consulta médica em consultório
+    descricoes_observadas: [Consulta médica em consultório]
+    tipo_item_origem: PROCEDIMENTO
+    conceito: CONSULTA
+    pendencias: [AMB-10]
+  - codigo: "20103077"
+    descricao_canonica: Taxa de sala cirúrgica - porte 4
+    descricoes_observadas: ["Taxa de sala cirúrgica — porte 4"]
+    tipo_item_origem: TAXA
+    conceito: TAXA_SALA_CIRURGICA
+    atributos: {porte_sala: 4}
+  - codigo: "20103050"
+    descricao_canonica: Taxa de sala cirúrgica - porte 2
+    descricoes_observadas: ["Taxa de sala cirúrgica — porte 2"]
+    tipo_item_origem: TAXA
+    conceito: TAXA_SALA_CIRURGICA
+    atributos: {porte_sala: 2}
+  - codigo: "60012010"
+    descricao_canonica: Diária de enfermaria
+    descricoes_observadas: [Diária de enfermaria]
+    tipo_item_origem: TAXA
+    conceito: DIARIA_ENFERMARIA
+    pendencias: [AMB-09]
+  - codigo: "60023011"
+    descricao_canonica: Diária de UTI adulto
+    descricoes_observadas: []          # consta no Anexo I, não aparece no sinistro de jun/2025
+    tipo_item_origem: TAXA
+    conceito: DIARIA_UTI
+  - codigo: "99999001"
+    descricao_canonica: Taxa de urgência/emergência
+    descricoes_observadas: [Taxa de urgência/emergência]
+    tipo_item_origem: TAXA
+    conceito: TAXA_URGENCIA_EMERGENCIA
+    observacao: Código 99999001 tem padrão de código interno/genérico (não TUSS oficial) — confirmar com a operadora.
+  - codigo: "40304361"
+    descricao_canonica: Hemograma completo
+    descricoes_observadas: [Hemograma completo]
+    tipo_item_origem: SADT
+    conceito: SADT_LABORATORIO
+  - codigo: "40901416"
+    descricao_canonica: Tomografia computadorizada de crânio
+    descricoes_observadas: [Tomografia computadorizada de crânio]
+    tipo_item_origem: SADT
+    conceito: SADT_IMAGEM
+  - codigo: "40808157"
+    descricao_canonica: Ultrassonografia de abdome total
+    descricoes_observadas: [Ultrassonografia de abdome total]
+    tipo_item_origem: SADT
+    conceito: SADT_IMAGEM
+  - codigo: "70520020"
+    descricao_canonica: Fio de sutura agulhado
+    descricoes_observadas: [Fio de sutura agulhado]
+    tipo_item_origem: MATERIAL
+    conceito: MATERIAL_SUTURA
+  - codigo: "70402600"
+    descricao_canonica: Compressa cirúrgica estéril
+    descricoes_observadas: [Compressa cirúrgica estéril]
+    tipo_item_origem: MATERIAL
+    conceito: MATERIAL_COMPRESSA
+  - codigo: "70451938"
+    descricao_canonica: Cateter venoso central duplo lúmen
+    descricoes_observadas: [Cateter venoso central duplo lúmen]
+    tipo_item_origem: MATERIAL
+    conceito: MATERIAL_ESPECIAL
+  - codigo: "90070020"
+    descricao_canonica: Cefazolina 1g - frasco-ampola
+    descricoes_observadas: ["Cefazolina 1g — frasco-ampola"]
+    tipo_item_origem: MEDICAMENTO
+    conceito: MEDICAMENTO_ANTIMICROBIANO
+  - codigo: "90050010"
+    descricao_canonica: Dipirona 500 mg - ampola
+    descricoes_observadas: ["Dipirona 500mg — ampola"]
+    tipo_item_origem: MEDICAMENTO
+    conceito: MEDICAMENTO_ANALGESICO

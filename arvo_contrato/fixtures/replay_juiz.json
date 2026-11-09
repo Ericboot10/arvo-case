@@ -1,0 +1,22 @@
+{
+  "vereditos": [
+    {
+      "campo": "anexo_i.31001012.valor_teto",
+      "veredito": "CONFIRMA_D",
+      "justificativa": "A tabela do Anexo I fixa R$ 4.200,00 para o código 31001012.",
+      "quote": "31001012 Colecistectomia videolaparoscópica Procedimento R$ 4.200,00"
+    },
+    {
+      "campo": "anexo_ii.31309062.materiais_rotina",
+      "veredito": "CONFIRMA_D",
+      "justificativa": "O Anexo II lista apenas 70520020 e 70402600 como materiais inclusos.",
+      "quote": "31309062 Herniorrafia inguinal unilateral 20103050 (porte 2 70520020⋅ 70402600"
+    },
+    {
+      "campo": "regra.5.1.tipo",
+      "veredito": "NENHUM_CORRETO",
+      "justificativa": "A 5.1 trata do direito de auditar; não é uma regra de glosa específica.",
+      "quote": "A OPERADORA poderá auditar, por meios automatizados, as contas apresentadas pelo PRESTADOR"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+# Perguntas de negócio = TESTE DE ACEITE da camada semântica.
+# Gate G2 só passa se cada pergunta "hoje" puder ser respondida usando apenas métricas e dimensões definidas.
+# As mesmas perguntas viram o benchmark do Genie/agente analítico (re-executado a cada release).
+versao: 0.1.0
+perguntas:
+  - id: Q01
+    persona: Paulo Antunes (Diretor de Contas Médicas)
+    pergunta: Quanto foi cobrado acima do contrato no mês, por cláusula?
+    # M03 (taxa_glosa) NÃO aceita clausula_principal: dentro de uma cláusula o denominador seria só o valor dos
+    # itens glosados, e a "taxa" perderia o sentido de negócio. Erro pego por este teste de aceite em 06/11/2026.
+    metricas: [M02, M04]
+    dimensoes: [competencia, clausula_principal]
+    disponibilidade: hoje
+  - id: Q02
+    persona: Dr. Ary Aguiar (Auditoria Médica)
+    pergunta: Em quais procedimentos cirúrgicos há cobrança apartada de itens inclusos no pacote, e quanto?
+    metricas: [M02, M04]
+    dimensoes: [conceito, regra_principal, conta_tem_pacote]
+    disponibilidade: hoje
+  - id: Q03
+    persona: Especialista em Contas Médicas
+    pergunta: Qual procedimento/item tem o maior gap entre o valor cobrado e o pactuado?
+    metricas: [M06]
+    dimensoes: [cod_tuss, conceito]
+    disponibilidade: hoje
+  - id: Q04
+    persona: Alana Ambrosio (Gerente de Contas Médicas)
+    pergunta: Quanto da economia identificada se perde entre a operadora e o prestador (perda de registro)?
+    metricas: [M17]
+    dimensoes: [inteligencia, tipo_inteligencia]
+    disponibilidade: hoje
+  - id: Q05
+    persona: Dr. Ary Aguiar
+    pergunta: Quais inteligências técnicas estão sendo mais retidas pela operadora?
+    metricas: [M16, M15]
+    dimensoes: [inteligencia, tipo_inteligencia]
+    disponibilidade: hoje
+  - id: Q06
+    persona: Paulo Antunes
+    # Separada da Q10: a meta de 2% é do TOTAL; "atingimento da meta por inteligência" não tem sentido de negócio.
+    pergunta: Quanto falta para a meta de 2% no mês?
+    metricas: [M19, M14]
+    dimensoes: [competencia]
+    disponibilidade: hoje
+  - id: Q10
+    persona: Paulo Antunes
+    pergunta: Qual a economia efetivada por inteligência e tipo?
+    metricas: [M14, M18]
+    dimensoes: [inteligencia, tipo_inteligencia]
+    disponibilidade: hoje
+  - id: Q07
+    persona: Jurídico
+    pergunta: Qual regra tem a maior taxa de recurso e de reversão?
+    metricas: [M12, M13]
+    dimensoes: [regra_principal]
+    disponibilidade: futura
+  - id: Q08
+    persona: Especialista em Contas Médicas
+    pergunta: Quanto do sinistro tem conflito semântico (p. ex. Pronto Socorro com caráter Eletivo) e onde?
+    metricas: [M09]
+    dimensoes: [regime, carater_canonico]
+    disponibilidade: hoje
+  - id: Q09
+    persona: Paulo Antunes
+    pergunta: Que fração das contas do prestador recebe glosa (risco de atrito)?
+    metricas: [M05]
+    dimensoes: [competencia, regime]
+    disponibilidade: hoje
+  - id: Q11
+    persona: Paulo Antunes
+    pergunta: Qual o indicador-norte do mês e qual fator (identificação, ativação, envio, registro, efetivação) mais limita?
+    metricas: [M20, M21, M22, M23, M24, M18]
+    dimensoes: [competencia]
+    disponibilidade: hoje
+  - id: Q12
+    persona: Dr. Ary Aguiar
+    pergunta: Por que motivo a auditoria retém glosas, e em quais regras e inteligências?
+    metricas: [M33]
+    dimensoes: [motivo_retencao, regra_principal]
+    disponibilidade: futura
+  - id: Q13
+    persona: Jurídico
+    pergunta: Quanto está em recurso agora, e qual a taxa de reversão por motivo?
+    metricas: [M32, M13]
+    dimensoes: [regra_principal]
+    disponibilidade: futura
+  - id: Q14
+    persona: Especialista em Contas Médicas
+    pergunta: O prestador está aprendendo? Quanto deixou de ser cobrado indevidamente (economia preventiva)?
+    metricas: [M28, M29]
+    dimensoes: [competencia, conceito]
+    disponibilidade: futura
+  - id: Q15
+    persona: Alana Ambrosio (Gerente de Contas Médicas)
+    pergunta: Por que motivo as glosas enviadas não chegam registradas ao prestador?
+    metricas: [M35]
+    dimensoes: [motivo_registro]
+    disponibilidade: futura
+  - id: Q16
+    persona: Cientista de Dados
+    pergunta: Qual a precisão auditada e a taxa de indevido não detectado na última rodada amostral?
+    metricas: [M10, M25]
+    dimensoes: [rodada]
+    disponibilidade: futura
+  - id: Q17
+    persona: Especialista em Contas Médicas
+    pergunta: Quais padrões de cobrança (prestador × conceito × cláusula) se repetem mês a mês?
+    metricas: [M27]
+    dimensoes: [id_prestador, conceito, clausula_principal]
+    disponibilidade: hoje

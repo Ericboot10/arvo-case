@@ -1,0 +1,129 @@
+# =====================================================================================================
+# Declarative Automation Bundle (antigo Databricks Asset Bundles) · projeto Arvo × Parthenon
+# Código promove entre ambientes; dado não promove (ADR-003). Um comando por ambiente:
+#   databricks bundle validate -t dev && databricks bundle deploy -t dev && databricks bundle run plataforma_hello -t dev
+# =====================================================================================================
+bundle:
+  name: arvo-case
+
+include:
+  - resources/*.yml
+
+# O código vai para o workspace. Dados do case (sinistro real, gabarito, planilha, PDF) NÃO vão:
+# entram por Volume, com controle de acesso (ADR-002).
+sync:
+  exclude:
+    - arvo.case/**
+    - "*.csv"
+    - "*.xlsx"
+    - "*.pdf"
+    - contratos/runs/**
+    - dados_sinteticos/**
+    - sanidade/saida_local/**
+    - "**/__pycache__/**"
+
+variables:
+  catalog:
+    description: Catálogo do ambiente (arvo_dev | arvo_stg | arvo_prod)
+  modo_ia:
+    description: "Modo dos extratores de IA da F3: simulado (sem chave) | real"
+    default: simulado
+  secret_scope:
+    description: Secret scope com as credenciais dos provedores de IA
+    default: arvo-ia
+  sp_stg:
+    description: Application ID do service principal de stg
+    default: DEFINIR_APPLICATION_ID_SP_STG
+  sp_prod:
+    description: Application ID do service principal de prod
+    default: DEFINIR_APPLICATION_ID_SP_PROD
+  warehouse_id:
+    description: SQL warehouse (serverless) do painel e dos alertas de sanidade (F9)
+    default: DEFINIR_SQL_WAREHOUSE_ID
+
+targets:
+  dev:
+    mode: development          # prefixa recursos com [dev <usuario>], pausa agendas, deploy no espaço do usuário
+    default: true
+    workspace:
+      host: https://DEFINIR-WORKSPACE-NAO-PROD.cloud.databricks.com
+    variables:
+      catalog: arvo_dev
+      modo_ia: simulado
+    resources:
+      jobs:
+        # Só no dev corporativo: sinistro SINTÉTICO para quem não pode ver dado real (ADR-002).
+        dev_dados_sinteticos:
+          name: arvo-dev-dados-sinteticos-${bundle.target}
+          description: "Gera sinistro SINTÉTICO rotulado no Volume de landing. Só faz sentido em arvo_dev (ADR-002)."
+          tasks:
+            - task_key: gerar
+              notebook_task:
+                notebook_path: ./plataforma/notebooks/01_dados_sinteticos.py
+                base_parameters:
+                  catalog: ${var.catalog}
+          tags:
+            fase: F4
+
+  # Databricks Free Edition: um workspace serverless, sem account console nem service principals.
+  # Roda com os DADOS DO CASE (sinistro, gabarito, contrato e planilha), sem nenhum dado gerado.
+  # A IA fica em modo real: sem chave de provedor, a F3 não roda aqui (nada de telemetria simulada).
+  # Passo a passo em plataforma/FREE_EDITION.md.
+  free:
+    mode: development
+    workspace:
+      profile: arvo-free         # criado por: databricks auth login --host <url-do-workspace> --profile arvo-free
+    variables:
+      catalog: arvo_dev
+      modo_ia: real
+      warehouse_id:
+        lookup:
+          warehouse: "Serverless Starter Warehouse"
+    resources:
+      jobs:
+        free_preparar_ambiente:
+          name: arvo-free-preparar-ambiente
+          description: "Free Edition: cria arvo_dev (schemas e volumes). Os dados do case sobem por plataforma/subir_dados_case.sh."
+          tasks:
+            - task_key: catalogo
+              notebook_task:
+                notebook_path: ./plataforma/notebooks/executar_sql.py
+                base_parameters: {catalog: arvo_dev, arquivo: "../../plataforma/sql/00_free_edition.sql"}
+
+  stg:
+    mode: production           # valida run_as/permissões; recursos sem prefixo de usuário
+    workspace:
+      host: https://DEFINIR-WORKSPACE-NAO-PROD.cloud.databricks.com
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: arvo_stg
+      modo_ia: real
+    run_as:
+      service_principal_name: ${var.sp_stg}
+    permissions:
+      - level: CAN_MANAGE
+        group_name: arvo-plataforma-admins
+      - level: CAN_VIEW
+        group_name: arvo-engenharia
+    git:
+      branch: main
+
+  prod:
+    mode: production
+    workspace:
+      host: https://DEFINIR-WORKSPACE-PROD.cloud.databricks.com
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: arvo_prod
+      modo_ia: real
+    run_as:
+      service_principal_name: ${var.sp_prod}
+    permissions:
+      - level: CAN_MANAGE
+        group_name: arvo-plataforma-admins
+      - level: CAN_VIEW
+        group_name: arvo-engenharia
+      - level: CAN_VIEW
+        group_name: arvo-auditoria-medica
+    git:
+      branch: main

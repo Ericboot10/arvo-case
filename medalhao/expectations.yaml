@@ -1,0 +1,62 @@
+# Expectations da F5: definidas UMA vez aqui, usadas pelo pipeline Lakeflow (dp.expect_all*) e pelo harness local.
+# Expressões em Spark SQL, avaliadas linha a linha (restrição das expectations: sem subconsulta nem função Python).
+# Por isso a unicidade é pré-calculada como coluna (_n_id_item, via janela) antes da expectation.
+#
+# dimensao: as 6 dimensões do guia Databricks de qualidade de dados
+#   (consistencia, acuracia, validade, completude, tempestividade, unicidade)
+# acao:
+#   warn        mantém a linha e conta a violação (vira indicador)
+#   quarentena  linha vai para quarantine.item_conta_rejeitado com o motivo; NÃO alimenta glosa
+#   fail        interrompe a atualização: invariante que só quebra por bug
+versao: 1
+
+silver.item_conta:
+  - {id: E01, dimensao: unicidade,   acao: quarentena, expr: "_n_id_item = 1",
+     descricao: "id_item único no lote (as duas linhas duplicadas vão para quarentena: não dá para saber qual vale)"}
+  - {id: E02, dimensao: validade,    acao: quarentena, expr: "cod_tuss RLIKE '^[0-9]{8}$'",
+     descricao: "código TUSS com 8 dígitos"}
+  - {id: E03, dimensao: validade,    acao: quarentena, expr: "conceito IS NOT NULL",
+     descricao: "código mapeado a conceito aprovado (aderência semântica, F2). Código novo vai para o Especialista"}
+  - {id: E04, dimensao: validade,    acao: quarentena, expr: "carater_canonico IS NOT NULL",
+     descricao: "caráter no domínio canônico. Valor novo (ex.: 'Emergência') nunca vira Eletivo por padrão (AMB-07)"}
+  - {id: E05, dimensao: validade,    acao: quarentena, expr: "regime IS NOT NULL",
+     descricao: "regime (tipo_conta) no domínio canônico"}
+  - {id: E06, dimensao: validade,    acao: quarentena, expr: "qtd IS NOT NULL AND qtd > 0",
+     descricao: "quantidade positiva"}
+  - {id: E07, dimensao: validade,    acao: quarentena, expr: "vl_unitario IS NOT NULL AND vl_unitario > 0",
+     descricao: "valor unitário positivo"}
+  - {id: E08, dimensao: consistencia, acao: quarentena, expr: "abs(vl_total - qtd * vl_unitario) <= 0.01",
+     descricao: "total = qtd × unitário. Valor inconsistente não pode fundamentar glosa (precisão > recall)"}
+  - {id: E09, dimensao: validade,    acao: quarentena, expr: "dt_atendimento IS NOT NULL",
+     descricao: "data de atendimento interpretável"}
+  - {id: E10, dimensao: completude,  acao: quarentena,
+     expr: "id_item IS NOT NULL AND id_conta IS NOT NULL AND id_beneficiario IS NOT NULL AND id_prestador IS NOT NULL",
+     descricao: "chaves obrigatórias presentes"}
+
+silver.conta:
+  - {id: E20, dimensao: consistencia, acao: warn, expr: "_n_carater = 1 AND _n_regime = 1 AND _n_benef = 1 AND _n_data = 1",
+     descricao: "premissa do glossário T09: um beneficiário, uma data, um caráter e um regime por conta"}
+  - {id: E21, dimensao: consistencia, acao: warn, expr: "NOT conflito_semantico",
+     descricao: "Pronto Socorro com caráter Eletivo (AMB-01). Não bloqueia, mas é medido (métrica M09)"}
+
+gold.fato_item:
+  - {id: E30, dimensao: acuracia,     acao: warn, expr: "NOT tem_preco_pactuado OR vl_unitario <= 5 * vl_teto_unitario",
+     descricao: "preço plausível (até 5× o teto). Acima disso, provável erro de digitação: revisar antes de glosar"}
+  - {id: E31, dimensao: consistencia, acao: fail, expr: "vl_excedente_potencial >= 0 AND vl_excedente_potencial <= vl_cobrado",
+     descricao: "invariante: excedente entre 0 e o valor cobrado"}
+  - {id: E32, dimensao: completude,   acao: fail, expr: "versao_contrato IS NOT NULL AND versao_semantica IS NOT NULL",
+     descricao: "invariante: todo item sabe com qual contrato e semântica foi avaliado"}
+
+# Tempestividade não é expectation linha a linha: é monitorada por anomaly detection de freshness/completude
+# (Data quality monitoring, Unity Catalog) sobre bronze.sinistro_raw. Ver plano F5/F9.
+
+# ---------------------------------------------------------------- F6 · invariantes jurídicos dos apontamentos
+gold.fato_apontamento:
+  - {id: E40, dimensao: validade,     acao: fail, expr: "vl_glosado > 0 AND vl_glosado <= vl_cobrado",
+     descricao: "glosa positiva e nunca maior que o valor cobrado"}
+  - {id: E41, dimensao: completude,   acao: fail, expr: "clausula_principal IS NOT NULL AND size(evidencia) > 0 AND length(justificativa) > 40",
+     descricao: "toda glosa cita cláusula, evidência e justificativa (Cl. 5.2): glosa sem cláusula não existe"}
+  - {id: E42, dimensao: validade,     acao: fail, expr: "status_envio IN ('PRONTO', 'REVISAO_HUMANA')",
+     descricao: "status de envio no domínio"}
+  - {id: E43, dimensao: consistencia, acao: warn, expr: "status_envio = 'PRONTO'",
+     descricao: "fração que exige revisão humana (AMB-01, AMB-11, E30). Não bloqueia; é medida"}

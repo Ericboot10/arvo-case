@@ -1,0 +1,46 @@
+# Taxonomia do ciclo de vida da glosa (base de gold.dim_etapa_funil, gold.dim_motivo e da ponte regra ↔ inteligência).
+# Status: PROPOSTA do comitê. Os motivos precisam ser validados com o Dr. Ary e a Alana (AMB-19); o mapeamento,
+# com a Arvo (AMB-17). Sem os eventos da operadora (AMB-18), o ciclo fica especificado, mas não é calculável.
+versao: 0.2.0
+status: rascunho_pendente_G2
+
+etapas:   # ordem = posição no funil. "valor" = coluna de valor em gold.fato_glosa_ciclo
+  - {etapa: IDENTIFICADA,         ordem: 1, dono: arvo,            valor: vl_identificado,
+     descricao: "Apontamento gerado pelo motor de regras (F6)"}
+  - {etapa: RETIDA_OPERADORA,     ordem: 2, dono: auditoria_medica, valor: null,
+     descricao: "A operadora decidiu não enviar (com motivo RET-*)"}
+  - {etapa: ENVIADA_OPERADORA,    ordem: 3, dono: auditoria_medica, valor: vl_enviado_operadora,
+     descricao: "A operadora aceitou e encaminhou para registro"}
+  - {etapa: REGISTRADA_PRESTADOR, ordem: 4, dono: contas_medicas,  valor: vl_registrado_prestador,
+     descricao: "Glosa registrada e comunicada ao prestador. A perda antes desta etapa tem motivo REG-*"}
+  - {etapa: EM_RECURSO,           ordem: 5, dono: juridico,        valor: vl_recorrido,
+     descricao: "O prestador contestou dentro do prazo"}
+  - {etapa: REVERTIDA,            ordem: 6, dono: juridico,        valor: vl_revertido,
+     descricao: "Recurso procedente, total ou parcial (motivo REC-*)"}
+  - {etapa: EFETIVADA,            ordem: 7, dono: contas_medicas,  valor: vl_efetivado,
+     descricao: "Valor glosado que se manteve: economia realizada"}
+
+motivos:  # categoria: tecnico | administrativo | integracao | contratual | agente
+  - {id_motivo: RET-01, etapa: RETIDA_OPERADORA, categoria: tecnico,        descricao: "Baixa confiança técnica na inteligência"}
+  - {id_motivo: RET-02, etapa: RETIDA_OPERADORA, categoria: tecnico,        descricao: "Evidência insuficiente no apontamento"}
+  - {id_motivo: RET-03, etapa: RETIDA_OPERADORA, categoria: administrativo, descricao: "Decisão comercial ou relacionamento com o prestador"}
+  - {id_motivo: RET-04, etapa: RETIDA_OPERADORA, categoria: administrativo, descricao: "Já glosado pela auditoria humana (duplicidade)"}
+  - {id_motivo: REG-01, etapa: REGISTRADA_PRESTADOR, categoria: integracao, descricao: "Falha de integração ou API"}
+  - {id_motivo: REG-02, etapa: REGISTRADA_PRESTADOR, categoria: integracao, descricao: "Rejeitado pelo sistema de contas da operadora"}
+  - {id_motivo: REG-03, etapa: REGISTRADA_PRESTADOR, categoria: administrativo, descricao: "Prazo de registro expirado"}
+  - {id_motivo: REC-01, etapa: REVERTIDA, categoria: administrativo, descricao: "Erro de registro do caráter de atendimento (AMB-01)"}
+  - {id_motivo: REC-02, etapa: REVERTIDA, categoria: tecnico,        descricao: "Justificativa clínica aceita"}
+  - {id_motivo: REC-03, etapa: REVERTIDA, categoria: contratual,     descricao: "Aditivo ou reajuste do Anexo I não considerado (AMB-13)"}
+  - {id_motivo: REC-04, etapa: REVERTIDA, categoria: agente,         descricao: "Erro do agente (regra ou dado) → volta para avaliação (F8)"}
+
+regra_inteligencia:   # ponte gold.ponte_regra_inteligencia. Inteligência = nome exato da planilha da Arvo
+  - {regra_id: R1, clausula: "2.2", inteligencia: "Alto Markup", tipo_vinculo: reformulacao_contratual,
+     nota: "Versão defensável do Alto Markup (efetivação média de 12%): teto do Anexo I em vez de markup estimado"}
+  - {regra_id: R2, clausula: "3.3", inteligencia: "Conformidade taxas de sala", tipo_vinculo: equivalente,
+     nota: "Taxa de sala inclusa no pacote cobrada à parte"}
+  - {regra_id: R3, clausula: "3.3", inteligencia: "Pertinencia de Materiais", tipo_vinculo: parcial,
+     nota: "Só o subconjunto contratual (material de rotina em pacote). A pertinência clínica continua técnica"}
+  - {regra_id: R4, clausula: "4.2", inteligencia: "Pertinência de taxas", tipo_vinculo: equivalente,
+     nota: "Taxa de urgência em atendimento eletivo"}
+  - {regra_id: R2B, clausula: "3.3", inteligencia: "Conformidade taxas de sala", tipo_vinculo: equivalente,
+     nota: "Sala de porte divergente em conta com pacote (AMB-11); sempre com revisão humana"}

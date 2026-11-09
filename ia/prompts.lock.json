@@ -1,0 +1,14 @@
+{
+  "extracao_contrato@1.0.0": {
+    "arquivo": "arvo_contrato/prompts/extracao_contrato_v1.md",
+    "sha256": "54506154232faa2c6894a6f15fca7c073ea8a31f2dd983854ce253c14a86a20a"
+  },
+  "juiz_extracao@1.0.0": {
+    "arquivo": "arvo_contrato/prompts/juiz_extracao_v1.md",
+    "sha256": "1441494618283df9c58e754404e91676d69f29f06f16c6f95a34e78688fc6608"
+  },
+  "sugerir_conceito@1.0.0": {
+    "arquivo": "ia/prompts/sugerir_conceito_v1.md",
+    "sha256": "6a522158a16bff27f2ceb150ea0f457281feb845033af4e26798df67c79fe1d4"
+  }
+}

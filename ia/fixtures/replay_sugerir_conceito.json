@@ -1,0 +1,12 @@
+{
+  "sugestoes": [
+    {"cod_tuss": "70520099", "conceito": "MATERIAL_SUTURA", "confianca": "ALTA",
+     "justificativa": "Descrição indica fio de sutura com agulha, igual ao 70520020 aprovado.",
+     "termos_chave": ["fio", "sutura", "agulhado"]},
+    {"cod_tuss": "40304399", "conceito": "SADT_LABORATORIO", "confianca": "MEDIA",
+     "justificativa": "Exame laboratorial (dosagem), família do hemograma.",
+     "termos_chave": ["dosagem", "laboratorio"]},
+    {"cod_tuss": "99999999", "conceito": "CODIGO_INEXISTENTE", "confianca": "ALTA",
+     "justificativa": "Resposta simulada FORA do domínio para testar a validação.", "termos_chave": []}
+  ]
+}

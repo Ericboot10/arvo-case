@@ -1,0 +1,18 @@
+# Matriz de custo de decisão (F8). PREMISSAS a validar com Negócio, Jurídico e Auditoria (AMB-20).
+# Uso: decidir, por regra, se o apontamento vai AUTOMÁTICO, passa por REVISÃO HUMANA ou fica BLOQUEADO.
+versao: 0.1.0
+status: premissas_pendentes_AMB-20
+moeda: BRL
+
+custo_revisao_humana: 20.00        # por apontamento: ~15 min de analista a R$ 80/h
+custo_fp_operacional: 60.00        # por glosa indevida enviada: análise do recurso, retrabalho e reprocesso
+custo_fp_atrito_pct: 0.20          # dano relacional como % do valor glosado indevidamente (proxy de erosão de confiança)
+custo_fn_pct: 1.00                 # glosa devida não feita perde 100% do valor (não entra na decisão de envio)
+piso_precisao_envio_automatico: 0.95   # política do comitê: limite INFERIOR do IC 95% da precisão da regra
+
+# Regra de decisão para um apontamento já identificado, com precisão p (limite inferior do IC) e valor médio V:
+#   custo esperado do envio automático = (1 − p) × (custo_fp_operacional + custo_fp_atrito_pct × V)
+#   custo da revisão humana           = custo_revisao_humana (a revisão pega o FP antes do envio)
+#   AUTOMATICO       se p ≥ piso E custo esperado automático ≤ custo da revisão
+#   REVISAO_HUMANA   se o envio compensa (p × V > custo esperado do FP), mas falha no piso ou no custo
+#   BLOQUEADO        se nem o envio compensa (p × V ≤ custo esperado do FP)

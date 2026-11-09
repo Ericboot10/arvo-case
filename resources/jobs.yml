@@ -1,0 +1,121 @@
+# Jobs do projeto. Tasks de notebook sem cluster declarado rodam em serverless; as dependências são
+# instaladas por %pip no próprio notebook (a doc indica environment_key só para tasks que não são de notebook).
+# Caminhos relativos a este arquivo.
+resources:
+  jobs:
+
+    # ------------------------------------------------------------------ G4: hello pipeline
+    plataforma_hello:
+      name: arvo-plataforma-hello-${bundle.target}
+      description: "Gate G4: prova que o ambiente está provisionado, com permissões, máscaras e escrita em ops."
+      tasks:
+        - task_key: verificar_ambiente
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/00_hello_ambiente.py
+            base_parameters:
+              catalog: ${var.catalog}
+              alvo: ${bundle.target}
+      tags:
+        fase: F4
+
+    # ------------------------------------------------------------------ F2: camada semântica
+    f2_semantica:
+      name: arvo-f2-semantica-${bundle.target}
+      tasks:
+        - task_key: carregar_semantica
+          notebook_task:
+            notebook_path: ../semantic/databricks/01_carregar_semantica.py
+            base_parameters:
+              catalog: ${var.catalog}
+              semantic_dir: ".."
+        # Habilitar após a F5 (as metric views dependem das tabelas gold):
+        # - task_key: metric_views
+        #   depends_on: [{task_key: carregar_semantica}]
+        #   notebook_task:
+        #     notebook_path: ../plataforma/notebooks/executar_sql.py
+        #     base_parameters: {catalog: "${var.catalog}", arquivo: "../../semantic/databricks/02_metric_views.sql"}
+      tags:
+        fase: F2
+
+    # ------------------------------------------------------------------ F3: contrato como dado
+    f3_extracao_contrato:
+      name: arvo-f3-extracao-contrato-${bundle.target}
+      tasks:
+        - task_key: criar_tabelas
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/executar_sql.py
+            base_parameters:
+              catalog: ${var.catalog}
+              arquivo: ../../arvo_contrato/databricks/f3_tabelas.sql
+        - task_key: extrair
+          depends_on:
+            - task_key: criar_tabelas
+          notebook_task:
+            notebook_path: ../arvo_contrato/databricks/f3_executar_extracao.py
+            base_parameters:
+              catalog: ${var.catalog}
+              modo: ${var.modo_ia}
+              pdf: Contrato-parthenon-x-hospital-sao-rafael.pdf
+              secret_scope: ${var.secret_scope}
+      tags:
+        fase: F3
+
+    # ------------------------------------------------------------------ F8: precisão e recall contra o gabarito
+    f8_avaliacao:
+      name: arvo-f8-avaliacao-${bundle.target}
+      description: "Gabarito do case → precisão e recall (IC 95% de Wilson) e auditoria rodada 0. Rodar depois da F5."
+      tasks:
+        - task_key: carregar_gabarito
+          notebook_task:
+            notebook_path: ../avaliacao_cientifica/databricks/f8_carregar_gabarito.py
+            base_parameters: {catalog: "${var.catalog}"}
+        - task_key: precisao_recall
+          depends_on: [{task_key: carregar_gabarito}]
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../avaliacao_cientifica/databricks/f8_avaliacao.sql"}
+      tags:
+        fase: F8
+
+    # ------------------------------------------------------------------ F9: indicadores de sanidade
+    f9_sanidade:
+      name: arvo-f9-sanidade-${bundle.target}
+      description: "Metric views → sanidade de IA → ops.v_sanidade_status → portão de envio. Painel e alertas são recursos do bundle."
+      tasks:
+        - task_key: metric_views
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../semantic/databricks/02_metric_views.sql"}
+        - task_key: ia_sanidade
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../ia/databricks/v_ia_sanidade.sql"}
+        - task_key: status
+          depends_on: [{task_key: metric_views}, {task_key: ia_sanidade}]
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../sanidade/databricks/v_sanidade_status.sql"}
+        - task_key: portao_envio
+          depends_on: [{task_key: status}]
+          notebook_task:
+            notebook_path: ../sanidade/notebooks/portao_envio.py
+            base_parameters: {catalog: "${var.catalog}"}
+      tags:
+        fase: F9
+
+    # ------------------------------------------------------------------ F10: rollout por regra
+    f10_rollout:
+      name: arvo-f10-rollout-${bundle.target}
+      description: "Destino de cada apontamento pelo estágio da regra, portão de sanidade e teto de valor. Nada é enviado aqui."
+      tasks:
+        - task_key: criar_tabelas
+          notebook_task:
+            notebook_path: ../plataforma/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../rollout/databricks/f10_tabelas.sql"}
+        - task_key: decidir_envio
+          depends_on: [{task_key: criar_tabelas}]
+          notebook_task:
+            notebook_path: ../rollout/notebooks/decidir_envio.py
+            base_parameters: {catalog: "${var.catalog}"}
+      tags:
+        fase: F10

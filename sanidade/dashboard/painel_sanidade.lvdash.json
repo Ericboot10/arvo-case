@@ -1,0 +1,1471 @@
+{
+  "datasets": [
+    {
+      "name": "ds_resumo",
+      "displayName": "Resumo por camada × status",
+      "queryLines": [
+        "SELECT camada_titulo AS camada, status, count(*) AS indicadores FROM ops.v_sanidade_status GROUP BY ALL\n"
+      ]
+    },
+    {
+      "name": "ds_portao",
+      "displayName": "Portão de envio",
+      "queryLines": [
+        "SELECT count_if(status = 'ALERTA' AND bloqueia_envio) AS bloqueios_de_envio,\n",
+        "       count_if(status = 'ALERTA') AS indicadores_em_alerta FROM ops.v_sanidade_status\n"
+      ]
+    },
+    {
+      "name": "ds_norte",
+      "displayName": "Índice-norte e fatores (última competência)",
+      "queryLines": [
+        "SELECT competencia, round(100 * MEASURE(indice_norte), 2) AS indice_norte_pct,\n",
+        "       round(100 * MEASURE(atingimento_meta), 1) AS atingimento_meta_pct,\n",
+        "       MEASURE(economia_efetivada) AS economia_efetivada\n",
+        "FROM semantic.mv_funil_economia GROUP BY competencia ORDER BY competencia DESC LIMIT 1\n"
+      ]
+    },
+    {
+      "name": "ds_fatores",
+      "displayName": "Fatores do norte (M21 × M22 × M23 × M24 × M18)",
+      "queryLines": [
+        "SELECT etapa, round(100 * taxa, 2) AS taxa_pct FROM (\n",
+        "  SELECT competencia, MEASURE(taxa_identificacao) AS identificacao, MEASURE(taxa_ativacao) AS ativacao,\n",
+        "         MEASURE(taxa_envio) AS envio, MEASURE(taxa_registro) AS registro, MEASURE(taxa_efetivacao) AS efetivacao\n",
+        "  FROM semantic.mv_funil_economia GROUP BY competencia ORDER BY competencia DESC LIMIT 1) f\n",
+        "LATERAL VIEW stack(5, '1 identificação', identificacao, '2 ativação', ativacao, '3 envio', envio,\n",
+        "                      '4 registro', registro, '5 efetivação', efetivacao) s AS etapa, taxa\n"
+      ]
+    },
+    {
+      "name": "ds_glosa_regra",
+      "displayName": "Glosa por regra",
+      "queryLines": [
+        "SELECT regra_principal, MEASURE(valor_glosado) AS valor_glosado, MEASURE(itens_glosados) AS itens_glosados\n",
+        "FROM semantic.mv_auditoria_glosa WHERE regra_principal IS NOT NULL GROUP BY regra_principal\n"
+      ]
+    },
+    {
+      "name": "ds_pr_total",
+      "displayName": "Precisão e recall (gabarito do case)",
+      "queryLines": [
+        "SELECT round(100 * precisao, 1) AS precisao_pct, round(100 * recall, 1) AS recall_pct,\n",
+        "       concat(format_number(100 * precisao_ic_inf, 1), '% – ', format_number(100 * precisao_ic_sup, 1), '%') AS precisao_ic95,\n",
+        "       concat(format_number(100 * recall_ic_inf, 1), '% – ', format_number(100 * recall_ic_sup, 1), '%') AS recall_ic95,\n",
+        "       round(100 * precisao_rs, 1) AS precisao_rs_pct, round(100 * recall_rs_limite_inferior, 1) AS recall_rs_li_pct,\n",
+        "       tp, fp, fn, tn, itens_rotulados\n",
+        "FROM ops.v_precisao_recall WHERE recorte = 'total'\n"
+      ]
+    },
+    {
+      "name": "ds_pr_matriz",
+      "displayName": "Matriz de confusão",
+      "queryLines": [
+        "SELECT resultado, CASE resultado WHEN 'TP' THEN 'Glosou e era indevido' WHEN 'FP' THEN 'Glosou, mas era devido'\n",
+        "                                 WHEN 'FN' THEN 'Não glosou, mas era indevido' ELSE 'Não glosou e era devido' END AS significado,\n",
+        "       count(*) AS itens, round(sum(CASE WHEN resultado IN ('TP', 'FP') THEN vl_glosado ELSE vl_cobrado END), 2) AS valor_rs\n",
+        "FROM gold.v_avaliacao_gabarito WHERE rotulado GROUP BY resultado\n",
+        "ORDER BY CASE resultado WHEN 'TP' THEN 1 WHEN 'FP' THEN 2 WHEN 'FN' THEN 3 ELSE 4 END\n"
+      ]
+    },
+    {
+      "name": "ds_pr_regra",
+      "displayName": "Precisão por regra",
+      "queryLines": [
+        "SELECT recorte AS regra, tp, fp, round(100 * precisao, 1) AS precisao_pct,\n",
+        "       concat(format_number(100 * precisao_ic_inf, 1), '% – ', format_number(100 * precisao_ic_sup, 1), '%') AS ic95,\n",
+        "       CASE WHEN precisao_ic_inf >= 0.95 THEN 'atinge o piso de 95%' ELSE 'abaixo do piso de 95% (amostra pequena)' END AS piso_envio\n",
+        "FROM ops.v_precisao_recall WHERE ordem = 1 ORDER BY recorte\n"
+      ]
+    },
+    {
+      "name": "ds_ia_serie",
+      "displayName": "IA por dia",
+      "queryLines": [
+        "SELECT dia, concat(task_id, ' · ', adapter) AS tarefa_adapter, taxa_schema_valido, custo_estimado_usd, latencia_p95_ms\n",
+        "FROM ops.v_ia_sanidade\n"
+      ]
+    },
+    {
+      "name": "ds_status_negocio",
+      "displayName": "Status · Negócio",
+      "queryLines": [
+        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE camada = 'negocio'\n",
+        "ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,\n",
+        "         ordem, recorte\n"
+      ]
+    },
+    {
+      "name": "ds_status_semantica",
+      "displayName": "Status · Aderência semântica",
+      "queryLines": [
+        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE camada = 'semantica'\n",
+        "ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,\n",
+        "         ordem, recorte\n"
+      ]
+    },
+    {
+      "name": "ds_status_dados",
+      "displayName": "Status · Engenharia de dados",
+      "queryLines": [
+        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE camada = 'dados'\n",
+        "ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,\n",
+        "         ordem, recorte\n"
+      ]
+    },
+    {
+      "name": "ds_status_ia",
+      "displayName": "Status · IA",
+      "queryLines": [
+        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE camada = 'ia'\n",
+        "ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,\n",
+        "         ordem, recorte\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "negocio",
+      "displayName": "1 · Negócio",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_neg",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Sanidade · Negócio primeiro\n",
+                "\n",
+                "Dados do case Arvo: sinistro e gabarito do Hospital São Rafael (jun/2025), contrato PRT-2025-0417 e planilha de inteligências (rede inteira, 6 meses). Nenhum dado gerado.\n",
+                "\n",
+                "Valor, qualidade da decisão, funil, prestador e **invariantes**. Invariante em ALERTA **bloqueia o envio**. CALIBRANDO = banda dinâmica ainda sem histórico suficiente; SEM_FONTE = tabela ainda não existe.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_bloq",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_portao",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "bloqueios_de_envio",
+                      "expression": "`bloqueios_de_envio`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "bloqueios_de_envio",
+                  "displayName": "Bloqueios de envio (deve ser 0)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Bloqueios de envio (deve ser 0)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_norte",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_norte",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "indice_norte_pct",
+                      "expression": "`indice_norte_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "indice_norte_pct",
+                  "displayName": "Índice-norte, % do sinistro (meta 2%)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Índice-norte, % do sinistro (meta 2%)"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_meta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_norte",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "atingimento_meta_pct",
+                      "expression": "`atingimento_meta_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "atingimento_meta_pct",
+                  "displayName": "Atingimento da meta, %"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Atingimento da meta, %"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "b_fatores",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_fatores",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "etapa",
+                      "expression": "`etapa`"
+                    },
+                    {
+                      "name": "taxa_pct",
+                      "expression": "`taxa_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "etapa",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "etapa"
+                },
+                "y": {
+                  "fieldName": "taxa_pct",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "taxa_pct"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Fatores do norte (% em cada etapa)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "b_regra",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_glosa_regra",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "regra_principal",
+                      "expression": "`regra_principal`"
+                    },
+                    {
+                      "name": "valor_glosado",
+                      "expression": "`valor_glosado`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "regra_principal",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "regra_principal"
+                },
+                "y": {
+                  "fieldName": "valor_glosado",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "valor_glosado"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Glosa por regra (R$)"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 6,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_neg",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_status_negocio",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "id_indicador",
+                      "expression": "`id_indicador`"
+                    },
+                    {
+                      "name": "nome",
+                      "expression": "`nome`"
+                    },
+                    {
+                      "name": "recorte",
+                      "expression": "`recorte`"
+                    },
+                    {
+                      "name": "valor",
+                      "expression": "`valor`"
+                    },
+                    {
+                      "name": "banda_min",
+                      "expression": "`banda_min`"
+                    },
+                    {
+                      "name": "banda_max",
+                      "expression": "`banda_max`"
+                    },
+                    {
+                      "name": "severidade",
+                      "expression": "`severidade`"
+                    },
+                    {
+                      "name": "dono",
+                      "expression": "`dono`"
+                    },
+                    {
+                      "name": "runbook",
+                      "expression": "`runbook`"
+                    },
+                    {
+                      "name": "acao",
+                      "expression": "`acao`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "id_indicador",
+                    "displayName": "id_indicador"
+                  },
+                  {
+                    "fieldName": "nome",
+                    "displayName": "nome"
+                  },
+                  {
+                    "fieldName": "recorte",
+                    "displayName": "recorte"
+                  },
+                  {
+                    "fieldName": "valor",
+                    "displayName": "valor"
+                  },
+                  {
+                    "fieldName": "banda_min",
+                    "displayName": "banda_min"
+                  },
+                  {
+                    "fieldName": "banda_max",
+                    "displayName": "banda_max"
+                  },
+                  {
+                    "fieldName": "severidade",
+                    "displayName": "severidade"
+                  },
+                  {
+                    "fieldName": "dono",
+                    "displayName": "dono"
+                  },
+                  {
+                    "fieldName": "runbook",
+                    "displayName": "runbook"
+                  },
+                  {
+                    "fieldName": "acao",
+                    "displayName": "acao"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Indicadores de negócio"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "precisao_recall",
+      "displayName": "2 · Precisão e recall",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_pr",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Precisão e recall · gabarito do case\n",
+                "\n",
+                "Motor de regras sobre o sinistro do Hospital São Rafael (jun/2025), comparado item a item com os 263 itens do gabarito de auditoria. Dados do case, sem alteração. IC 95% de Wilson.\n",
+                "\n",
+                "**Precisão** = das glosas feitas, quantas eram indevidas. **Recall** = dos itens indevidos, quantos o agente glosou.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_prec",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pr_total",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "precisao_pct",
+                      "expression": "`precisao_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "precisao_pct",
+                  "displayName": "Precisão, %"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Precisão, %"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_rec",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pr_total",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "recall_pct",
+                      "expression": "`recall_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "recall_pct",
+                  "displayName": "Recall, %"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Recall, %"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_prec_rs",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pr_total",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "precisao_rs_pct",
+                      "expression": "`precisao_rs_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "precisao_rs_pct",
+                  "displayName": "Precisão em R$, %"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Precisão em R$, %"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_pr_ic",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pr_total",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "precisao_ic95",
+                      "expression": "`precisao_ic95`"
+                    },
+                    {
+                      "name": "recall_ic95",
+                      "expression": "`recall_ic95`"
+                    },
+                    {
+                      "name": "recall_rs_li_pct",
+                      "expression": "`recall_rs_li_pct`"
+                    },
+                    {
+                      "name": "tp",
+                      "expression": "`tp`"
+                    },
+                    {
+                      "name": "fp",
+                      "expression": "`fp`"
+                    },
+                    {
+                      "name": "fn",
+                      "expression": "`fn`"
+                    },
+                    {
+                      "name": "tn",
+                      "expression": "`tn`"
+                    },
+                    {
+                      "name": "itens_rotulados",
+                      "expression": "`itens_rotulados`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "precisao_ic95",
+                    "displayName": "precisao_ic95"
+                  },
+                  {
+                    "fieldName": "recall_ic95",
+                    "displayName": "recall_ic95"
+                  },
+                  {
+                    "fieldName": "recall_rs_li_pct",
+                    "displayName": "recall_rs_li_pct"
+                  },
+                  {
+                    "fieldName": "tp",
+                    "displayName": "tp"
+                  },
+                  {
+                    "fieldName": "fp",
+                    "displayName": "fp"
+                  },
+                  {
+                    "fieldName": "fn",
+                    "displayName": "fn"
+                  },
+                  {
+                    "fieldName": "tn",
+                    "displayName": "tn"
+                  },
+                  {
+                    "fieldName": "itens_rotulados",
+                    "displayName": "itens_rotulados"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Intervalos de confiança e contagens"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_pr_matriz",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pr_matriz",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "resultado",
+                      "expression": "`resultado`"
+                    },
+                    {
+                      "name": "significado",
+                      "expression": "`significado`"
+                    },
+                    {
+                      "name": "itens",
+                      "expression": "`itens`"
+                    },
+                    {
+                      "name": "valor_rs",
+                      "expression": "`valor_rs`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "resultado",
+                    "displayName": "resultado"
+                  },
+                  {
+                    "fieldName": "significado",
+                    "displayName": "significado"
+                  },
+                  {
+                    "fieldName": "itens",
+                    "displayName": "itens"
+                  },
+                  {
+                    "fieldName": "valor_rs",
+                    "displayName": "valor_rs"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Matriz de confusão"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_pr_regra",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pr_regra",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "regra",
+                      "expression": "`regra`"
+                    },
+                    {
+                      "name": "tp",
+                      "expression": "`tp`"
+                    },
+                    {
+                      "name": "fp",
+                      "expression": "`fp`"
+                    },
+                    {
+                      "name": "precisao_pct",
+                      "expression": "`precisao_pct`"
+                    },
+                    {
+                      "name": "ic95",
+                      "expression": "`ic95`"
+                    },
+                    {
+                      "name": "piso_envio",
+                      "expression": "`piso_envio`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "regra",
+                    "displayName": "regra"
+                  },
+                  {
+                    "fieldName": "tp",
+                    "displayName": "tp"
+                  },
+                  {
+                    "fieldName": "fp",
+                    "displayName": "fp"
+                  },
+                  {
+                    "fieldName": "precisao_pct",
+                    "displayName": "precisao_pct"
+                  },
+                  {
+                    "fieldName": "ic95",
+                    "displayName": "ic95"
+                  },
+                  {
+                    "fieldName": "piso_envio",
+                    "displayName": "piso_envio"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Precisão por regra (recall por regra não existe: o item não glosado não tem regra)"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 9,
+            "width": 3,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "semantica_dados",
+      "displayName": "3 · Semântica e dados",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_sd",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Aderência semântica e engenharia de dados\n",
+                "\n",
+                "A capacidade de treinar agentes vem da aderência à camada semântica: meta 100%.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_sem",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_status_semantica",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "id_indicador",
+                      "expression": "`id_indicador`"
+                    },
+                    {
+                      "name": "nome",
+                      "expression": "`nome`"
+                    },
+                    {
+                      "name": "recorte",
+                      "expression": "`recorte`"
+                    },
+                    {
+                      "name": "valor",
+                      "expression": "`valor`"
+                    },
+                    {
+                      "name": "banda_min",
+                      "expression": "`banda_min`"
+                    },
+                    {
+                      "name": "banda_max",
+                      "expression": "`banda_max`"
+                    },
+                    {
+                      "name": "severidade",
+                      "expression": "`severidade`"
+                    },
+                    {
+                      "name": "dono",
+                      "expression": "`dono`"
+                    },
+                    {
+                      "name": "runbook",
+                      "expression": "`runbook`"
+                    },
+                    {
+                      "name": "acao",
+                      "expression": "`acao`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "id_indicador",
+                    "displayName": "id_indicador"
+                  },
+                  {
+                    "fieldName": "nome",
+                    "displayName": "nome"
+                  },
+                  {
+                    "fieldName": "recorte",
+                    "displayName": "recorte"
+                  },
+                  {
+                    "fieldName": "valor",
+                    "displayName": "valor"
+                  },
+                  {
+                    "fieldName": "banda_min",
+                    "displayName": "banda_min"
+                  },
+                  {
+                    "fieldName": "banda_max",
+                    "displayName": "banda_max"
+                  },
+                  {
+                    "fieldName": "severidade",
+                    "displayName": "severidade"
+                  },
+                  {
+                    "fieldName": "dono",
+                    "displayName": "dono"
+                  },
+                  {
+                    "fieldName": "runbook",
+                    "displayName": "runbook"
+                  },
+                  {
+                    "fieldName": "acao",
+                    "displayName": "acao"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Aderência semântica"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_dados",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_status_dados",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "id_indicador",
+                      "expression": "`id_indicador`"
+                    },
+                    {
+                      "name": "nome",
+                      "expression": "`nome`"
+                    },
+                    {
+                      "name": "recorte",
+                      "expression": "`recorte`"
+                    },
+                    {
+                      "name": "valor",
+                      "expression": "`valor`"
+                    },
+                    {
+                      "name": "banda_min",
+                      "expression": "`banda_min`"
+                    },
+                    {
+                      "name": "banda_max",
+                      "expression": "`banda_max`"
+                    },
+                    {
+                      "name": "severidade",
+                      "expression": "`severidade`"
+                    },
+                    {
+                      "name": "dono",
+                      "expression": "`dono`"
+                    },
+                    {
+                      "name": "runbook",
+                      "expression": "`runbook`"
+                    },
+                    {
+                      "name": "acao",
+                      "expression": "`acao`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "id_indicador",
+                    "displayName": "id_indicador"
+                  },
+                  {
+                    "fieldName": "nome",
+                    "displayName": "nome"
+                  },
+                  {
+                    "fieldName": "recorte",
+                    "displayName": "recorte"
+                  },
+                  {
+                    "fieldName": "valor",
+                    "displayName": "valor"
+                  },
+                  {
+                    "fieldName": "banda_min",
+                    "displayName": "banda_min"
+                  },
+                  {
+                    "fieldName": "banda_max",
+                    "displayName": "banda_max"
+                  },
+                  {
+                    "fieldName": "severidade",
+                    "displayName": "severidade"
+                  },
+                  {
+                    "fieldName": "dono",
+                    "displayName": "dono"
+                  },
+                  {
+                    "fieldName": "runbook",
+                    "displayName": "runbook"
+                  },
+                  {
+                    "fieldName": "acao",
+                    "displayName": "acao"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Engenharia de dados"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "ia",
+      "displayName": "4 · IA",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_ia",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## IA (independente de provedor)\n",
+                "\n",
+                "Limites em `ia/config/alertas_ia.yaml`. Drift de modelo ou troca de provedor exige golden set.\n",
+                "\n",
+                "Neste workspace não há chave de provedor de IA: a extração do contrato não rodou aqui e a página fica vazia, em vez de mostrar telemetria simulada. O motor usa o contrato do case revisado na F2.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "b_ia",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_ia_serie",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "dia",
+                      "expression": "`dia`"
+                    },
+                    {
+                      "name": "taxa_schema_valido",
+                      "expression": "`taxa_schema_valido`"
+                    },
+                    {
+                      "name": "tarefa_adapter",
+                      "expression": "`tarefa_adapter`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dia",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "dia"
+                },
+                "y": {
+                  "fieldName": "taxa_schema_valido",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "taxa_schema_valido"
+                },
+                "color": {
+                  "fieldName": "tarefa_adapter",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "tarefa_adapter"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Schema válido por dia"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_ia",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_status_ia",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "id_indicador",
+                      "expression": "`id_indicador`"
+                    },
+                    {
+                      "name": "nome",
+                      "expression": "`nome`"
+                    },
+                    {
+                      "name": "recorte",
+                      "expression": "`recorte`"
+                    },
+                    {
+                      "name": "valor",
+                      "expression": "`valor`"
+                    },
+                    {
+                      "name": "banda_min",
+                      "expression": "`banda_min`"
+                    },
+                    {
+                      "name": "banda_max",
+                      "expression": "`banda_max`"
+                    },
+                    {
+                      "name": "severidade",
+                      "expression": "`severidade`"
+                    },
+                    {
+                      "name": "dono",
+                      "expression": "`dono`"
+                    },
+                    {
+                      "name": "runbook",
+                      "expression": "`runbook`"
+                    },
+                    {
+                      "name": "acao",
+                      "expression": "`acao`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "id_indicador",
+                    "displayName": "id_indicador"
+                  },
+                  {
+                    "fieldName": "nome",
+                    "displayName": "nome"
+                  },
+                  {
+                    "fieldName": "recorte",
+                    "displayName": "recorte"
+                  },
+                  {
+                    "fieldName": "valor",
+                    "displayName": "valor"
+                  },
+                  {
+                    "fieldName": "banda_min",
+                    "displayName": "banda_min"
+                  },
+                  {
+                    "fieldName": "banda_max",
+                    "displayName": "banda_max"
+                  },
+                  {
+                    "fieldName": "severidade",
+                    "displayName": "severidade"
+                  },
+                  {
+                    "fieldName": "dono",
+                    "displayName": "dono"
+                  },
+                  {
+                    "fieldName": "runbook",
+                    "displayName": "runbook"
+                  },
+                  {
+                    "fieldName": "acao",
+                    "displayName": "acao"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Indicadores de IA"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "geral",
+      "displayName": "5 · Visão geral",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_geral",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Visão geral\n",
+                "\n",
+                "Quantos indicadores em cada status, por camada.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "b_resumo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_resumo",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "camada",
+                      "expression": "`camada`"
+                    },
+                    {
+                      "name": "indicadores",
+                      "expression": "`indicadores`"
+                    },
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "camada",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "camada"
+                },
+                "y": {
+                  "fieldName": "indicadores",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "indicadores"
+                },
+                "color": {
+                  "fieldName": "status",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "status"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Indicadores por status"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ]
+    }
+  ]
+}

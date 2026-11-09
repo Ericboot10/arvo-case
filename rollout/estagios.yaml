@@ -1,0 +1,87 @@
+# F10 · Rollout por regra. Política como dado: o motor (F6) aponta; ESTE arquivo decide para onde cada apontamento vai.
+# Promover = decisão humana registrada (estado_regras.yaml, com aprovador). Rebaixar = automático (kill switch).
+# Assimetria proposital: errar para o lado da cautela custa revisão; errar para o lado da pressa custa recurso e confiança.
+versao: 1.0.0
+status: rascunho_pendente_G10
+
+# ------------------------------------------------------------------ estágios de uma REGRA
+estagios:
+  DESLIGADA:
+    ordem: 0
+    descricao: "Kill switch. O motor ainda calcula (para medir), nada sai e nada é auditado"
+    destino_padrao: NAO_ENVIAR
+  SHADOW:
+    ordem: 1
+    descricao: "Lê dado real, grava em gold_shadow, NÃO envia. Amostra auditada pelo time do Dr. Ary (plano amostral F8)"
+    destino_padrao: NAO_ENVIAR
+  CANARIO:
+    ordem: 2
+    descricao: "Envia, mas TODO apontamento passa por revisão humana antes. Mede aceite do auditor, registro e recurso"
+    destino_padrao: REVISAO_HUMANA
+  AUTOMATICO:
+    ordem: 3
+    descricao: "Envio direto até o teto de valor da regra; acima dele, em conflito semântico ou com motivo de revisão, HITL"
+    destino_padrao: ENVIO_AUTOMATICO
+
+# ------------------------------------------------------------------ destinos de um APONTAMENTO
+destinos:
+  BLOQUEADO: "Portão de sanidade fechado (F9): nenhum apontamento do run sai"
+  NAO_ENVIAR: "Fica em gold_shadow (regra desligada ou em shadow)"
+  REVISAO_HUMANA: "Fila do auditor; sai só se aprovado"
+  ENVIO_AUTOMATICO: "Vai direto ao prestador"
+
+# Ordem de precedência na decisão de um apontamento (a primeira que casar vence):
+#   1. portão de sanidade fechado                    → BLOQUEADO
+#   2. regra DESLIGADA ou SHADOW                      → NAO_ENVIAR
+#   3. regra CANARIO                                  → REVISAO_HUMANA
+#   4. motivo_revisao do motor (ex.: AMB-01, PS)      → REVISAO_HUMANA
+#   5. conflito semântico no item                     → REVISAO_HUMANA
+#   6. vl_glosado acima do teto de valor da regra     → REVISAO_HUMANA
+#   7. caso contrário                                 → ENVIO_AUTOMATICO
+
+# ------------------------------------------------------------------ teto de valor do envio automático
+# Derivado da matriz de custo (avaliacao_cientifica/custos.yaml, AMB-20), não arbitrado:
+#   envio automático compensa enquanto  (1 − p) × (custo_fp_operacional + atrito × V)  ≤  custo_revisao_humana
+#   ⇒  V_max = (custo_revisao_humana / (1 − p) − custo_fp_operacional) / atrito
+#   p = limite inferior do IC 95% da precisão auditada da regra. p = 0,95 → R$ 1.700; p = 0,98 → R$ 4.700; p = 0,99 → R$ 9.700
+teto_valor:
+  fonte: avaliacao_cientifica/custos.yaml
+  teto_maximo: 10000.00          # trava de política: nenhum apontamento acima disso sai sem revisão, qualquer que seja p
+
+# ------------------------------------------------------------------ critérios de PROMOÇÃO (todos obrigatórios + aprovação)
+promocao:
+  SHADOW->CANARIO:
+    aprovadores: [auditor_medico, cientista_dados]
+    criterios:
+      - {id: amostra,        descricao: "Apontamentos auditados ≥ n do plano amostral da regra (F8)", tipo: n_auditado_vs_plano}
+      - {id: precisao_inf,   descricao: "Limite inferior do IC 95% (Wilson) da precisão ≥ 0,95", tipo: min, campo: precisao_inf, limite: 0.95}
+      - {id: invariantes,    descricao: "Zero violação de invariante no período (S18–S21)", tipo: max, campo: violacoes_invariantes, limite: 0}
+      - {id: aderencia,      descricao: "Aderência semântica = 100% (S22)", tipo: min, campo: aderencia_semantica, limite: 1.0}
+      - {id: telemetria,     descricao: "Telemetria completa: run_id, versões de contrato, semântica e regra em todo apontamento", tipo: verdadeiro, campo: telemetria_completa}
+      - {id: duracao,        descricao: "Pelo menos 4 semanas em shadow", tipo: min, campo: semanas_no_estagio, limite: 4}
+  CANARIO->AUTOMATICO:
+    aprovadores: [auditor_medico, juridico, pm_cs]
+    criterios:
+      - {id: precisao,       descricao: "Precisão auditada ≥ 0,98", tipo: min, campo: precisao, limite: 0.98}
+      - {id: precisao_inf,   descricao: "Limite inferior do IC 95% ≥ 0,95", tipo: min, campo: precisao_inf, limite: 0.95}
+      - {id: invariantes,    descricao: "Zero violação de invariante", tipo: max, campo: violacoes_invariantes, limite: 0}
+      - {id: reversao,       descricao: "Reversão projetada ≤ 5% (S09)", tipo: max, campo: reversao, limite: 0.05}
+      - {id: aderencia,      descricao: "Aderência semântica = 100%", tipo: min, campo: aderencia_semantica, limite: 1.0}
+      - {id: telemetria,     descricao: "Telemetria completa", tipo: verdadeiro, campo: telemetria_completa}
+      - {id: integracao,     descricao: "Integração ponta a ponta testada: o apontamento chega registrado no sistema da Parthenon", tipo: verdadeiro, campo: integracao_ok}
+      - {id: duracao,        descricao: "Pelo menos 4 semanas em canário", tipo: min, campo: semanas_no_estagio, limite: 4}
+
+# ------------------------------------------------------------------ REBAIXAMENTO automático (lido do painel F9)
+# Indicador em ALERTA no recorte da regra → a regra cai para o estágio indicado (nunca sobe sozinha de volta).
+rebaixamento:
+  - {indicador: S09, condicao: "reversão > 5%",               para: DESLIGADA, motivo: "precisão em campo abaixo do aceitável"}
+  - {indicador: S06, condicao: "limite inferior do IC < 95%", para: CANARIO,   motivo: "precisão sem evidência suficiente para envio direto"}
+  - {indicador: S05, condicao: "precisão auditada < 98%",     para: CANARIO,   motivo: "precisão auditada abaixo do critério"}
+  - {indicador: S08, condicao: "recurso acima do benchmark",   para: CANARIO,   motivo: "atrito com o prestador"}
+# Invariantes (S18–S21, S24–S26) não rebaixam regra: fecham o PORTÃO do run inteiro (sanidade/portao.py).
+
+# ------------------------------------------------------------------ ordem de entrada (plano v2, F10.4)
+ondas_canario:
+  - {regras: [R1, R3], porque: "As mais objetivas: número contra tabela assinada e lista fechada de materiais"}
+  - {regras: [R2, R2B], porque: "Dependem do escopo 'conta' do pacote (AMB-02)"}
+  - {regras: [R4], porque: "Em Pronto Socorro sempre HITL (AMB-01): o motor já marca motivo_revisao"}

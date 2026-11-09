@@ -1,0 +1,10 @@
+# Destinos de notificação dos alertas de sanidade, por dono (G9). Valores = IDs de notification destinations
+# do workspace (Settings → Notifications), NUNCA e-mails pessoais no repositório.
+# Enquanto estiver DEFINIR_*, o alerta é criado sem assinatura (aparece no painel, não notifica).
+pm_cs: [DEFINIR_DESTINO_PM_CS]
+juridico: [DEFINIR_DESTINO_JURIDICO]
+cientista_dados: [DEFINIR_DESTINO_CIENTISTA]
+analytics_engineer: [DEFINIR_DESTINO_ANALYTICS]
+engenheiro_dados: [DEFINIR_DESTINO_ENG_DADOS]
+especialista_contas_medicas: [DEFINIR_DESTINO_CONTAS]
+auditor_medico: [DEFINIR_DESTINO_AUDITOR]

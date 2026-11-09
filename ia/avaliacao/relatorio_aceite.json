@@ -1,0 +1,159 @@
+{
+  "modo": "simulado",
+  "executado_em": "2026-11-06T23:04:45",
+  "limiar_acuracia": 0.99,
+  "candidatos": {
+    "deterministico": {
+      "v0_original": {
+        "acuracia": 1.0,
+        "corretos": 40,
+        "esperados": 40,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "v1_precos_alterados": {
+        "acuracia": 1.0,
+        "corretos": 40,
+        "esperados": 40,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "v2_clausula_renumerada": {
+        "acuracia": 1.0,
+        "corretos": 40,
+        "esperados": 40,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "v3_linha_nova_anexo_i": {
+        "acuracia": 1.0,
+        "corretos": 41,
+        "esperados": 41,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "v4_pacote_removido": {
+        "acuracia": 1.0,
+        "corretos": 38,
+        "esperados": 38,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "v5_codigo_taxa_trocado": {
+        "acuracia": 1.0,
+        "corretos": 40,
+        "esperados": 40,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "v6_tabela_sem_cabecalho": {
+        "acuracia": 1.0,
+        "corretos": 40,
+        "esperados": 40,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "_aprovado_em_todas": true
+    },
+    "replay_fiel": {
+      "v0_original": {
+        "acuracia": 1.0,
+        "corretos": 40,
+        "esperados": 40,
+        "faltantes": [],
+        "errados": [],
+        "inventados": [],
+        "quotes_ok": 1.0,
+        "schema_ok": true,
+        "aprovado": true
+      },
+      "_aprovado_em_todas": true
+    }
+  },
+  "telemetria": [
+    {
+      "call_id": "1882ecb745404d77bfb230a93a927176",
+      "run_id": "golden-v0_original",
+      "task_id": "golden_extracao",
+      "chave_idempotencia": "5a4d2e775b5c3890317db6a3cd4e0ab8c5287c19b0bc15a428898c6b631dd059",
+      "ts_inicio": 1794017086.381663,
+      "ambiente": "dev",
+      "provedor": "simulado",
+      "adapter": "replay_fiel",
+      "familia": "simulado_familia_1",
+      "endpoint": null,
+      "modelo_pedido": "replay",
+      "modelo_servido": "replay",
+      "fallback_de": null,
+      "prompt_id": "extracao_contrato",
+      "prompt_versao": "1.0.0",
+      "prompt_hash": "c725dc5743484426ef04f2b07f4ae9006fb3a61373aebdbaeb183c7c8edbf191",
+      "system_hash": "6524c0f52804cec600d1357ffd9f35cd3430cb6e8f0f55a3a41554df20aeb323",
+      "schema_id": "extracao_contrato",
+      "schema_versao": "1.0.0",
+      "schema_hash": "e41e27ca94748f95d830c313d005ebad5f13b92a15ab4b2136b7ba66cab9dcb7",
+      "params_pedidos": {
+        "max_output_tokens": 16000,
+        "temperature": 0.0,
+        "reasoning_effort": "high"
+      },
+      "params_aplicados": {
+        "max_output_tokens": 16000,
+        "temperature": 0.0
+      },
+      "params_ignorados": {
+        "reasoning_effort": "não suportado por simulado/replay (configuração 'suporta')"
+      },
+      "input_tokens": 2188,
+      "output_tokens": 1492,
+      "cache_read_tokens": null,
+      "cache_write_tokens": null,
+      "reasoning_tokens": null,
+      "custo_estimado_usd": null,
+      "cache_hit_local": false,
+      "latencia_ms": 0.4,
+      "stop_normalizado": "COMPLETO",
+      "stop_bruto": "replay",
+      "stop_detalhe": null,
+      "schema_valido": true,
+      "erros_schema": [],
+      "erro": null,
+      "request_id": null,
+      "documento_sha256": "633e3bf1c5ae5075af81de007f2e78db8a5559cff07e4bbd4059db3fff063dd7",
+      "classe_dados": "contratual",
+      "perimetro": "local"
+    }
+  ],
+  "gate_G7_independencia": {
+    "provedores_aprovados": [],
+    "atende": false
+  }
+}

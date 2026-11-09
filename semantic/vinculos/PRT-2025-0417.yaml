@@ -1,0 +1,51 @@
+# Vínculo contrato → papéis contratuais (o que ESTE contrato diz sobre cada código/conceito).
+# ATENÇÃO: rascunho por TRANSCRIÇÃO MANUAL do PDF, apenas para os testes de integridade semântica da F2.
+# A versão oficial sai da F3 (extração com citação literal verificada + consenso + aprovação do Jurídico).
+id_contrato: PRT-2025-0417
+prestador: P001
+operadora: Parthenon Saúde
+modelo_remuneracao: fee_for_service
+vigencia: {inicio: "2025-01-01", meses: 24, renovacao_automatica: true}
+status: rascunho_pre_F3
+versao: 0.0.1
+
+itens_com_preco_pactuado:   # Anexo I — papel ITEM_COM_PRECO_PACTUADO (Cl. 2.1–2.2)
+  - {codigo: "31001012", teto: 4200.00}
+  - {codigo: "31309062", teto: 3100.00}
+  - {codigo: "30715016", teto: 3800.00}
+  - {codigo: "10101039", teto: 120.00}
+  - {codigo: "20103077", teto: 1250.00}
+  - {codigo: "20103050", teto: 620.00}
+  - {codigo: "60012010", teto: 480.00}
+  - {codigo: "60023011", teto: 1600.00}
+  - {codigo: "99999001", teto: 350.00}
+  - {codigo: "40304361", teto: 18.00}
+  - {codigo: "40901416", teto: 320.00}
+  - {codigo: "40808157", teto: 140.00}
+  - {codigo: "70520020", teto: 45.00}
+  - {codigo: "70402600", teto: 9.00}
+  - {codigo: "70451938", teto: 280.00}
+  - {codigo: "90070020", teto: 16.00}
+  - {codigo: "90050010", teto: 4.00}
+
+pacotes:                    # Anexo II — papel PROCEDIMENTO_EM_PACOTE (Cl. 3.1)
+  escopo: conta             # "para a conta em que o procedimento for realizado" — AMB-02
+  itens_inclusos_comuns:    # papel ITEM_INCLUSO_NO_PACOTE (Cl. 3.2 b) — "materiais de rotina", lista fechada
+    - "70520020"
+    - "70402600"
+  procedimentos:
+    - {codigo: "31001012", taxa_sala_inclusa: "20103077"}
+    - {codigo: "31309062", taxa_sala_inclusa: "20103050"}
+    - {codigo: "30715016", taxa_sala_inclusa: "20103077"}
+  conceitos_excluidos:      # papel ITEM_EXCLUIDO_DO_PACOTE (Cl. 3.4)
+    - DIARIA
+    - MATERIAL_ESPECIAL
+    - MEDICAMENTO
+    - SADT
+
+taxas_condicionadas_ao_carater:   # papel TAXA_CONDICIONADA_AO_CARATER (Cl. 4.1–4.2)
+  - codigo: "99999001"
+    carater_permitido: [URGENCIA_EMERGENCIA]
+
+fora_auditoria_automatica:        # papel ITEM_FORA_AUDITORIA_AUTOMATICA (Cl. 2.3)
+  regra: "códigos sem preço no Anexo I não entram na auditoria automática de preço"

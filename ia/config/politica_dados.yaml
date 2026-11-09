@@ -1,0 +1,21 @@
+# Política de dados da camada de IA (LGPD): QUE classe de dado pode ir para QUAL perímetro.
+# O roteador aplica ANTES de chamar qualquer adapter (e antes do cache). Uma violação vira registro BLOQUEADO_POLITICA_DADOS.
+versao: 1
+classes:
+  publico:        "Informação pública (normas ANS, tabelas TUSS)"
+  contratual:     "Texto e parâmetros de contrato entre operadora e prestador (sem dado de pessoa)"
+  catalogo:       "Código e descrição de item faturado, sem beneficiário, conta ou data"
+  pseudonimizado: "Dado de atendimento com pseudônimo (id_beneficiario_hash), sem identificador direto"
+  identificavel:  "Qualquer dado com identificador de pessoa (id_beneficiario) ou combinação reidentificável"
+
+perimetros:
+  local:      "Execução no próprio processo (determinístico, replay de testes)"
+  plataforma: "Modelo hospedado DENTRO do workspace Databricks (endpoints databricks-*), sem saída do perímetro"
+  externo:    "Provedor fora do perímetro (OpenAI, Anthropic, Google, inclusive quando roteado pelo AI Gateway)"
+
+permitido:
+  local:      [publico, contratual, catalogo, pseudonimizado]
+  plataforma: [publico, contratual, catalogo, pseudonimizado]
+  externo:    [publico, contratual, catalogo]
+
+nunca: [identificavel]   # nenhum perímetro recebe dado identificável, em nenhuma hipótese

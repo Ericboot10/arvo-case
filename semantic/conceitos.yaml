@@ -1,0 +1,103 @@
+# Taxonomia de conceitos de negócio (UNIVERSAL — não depende de prestador nem de contrato).
+#
+# Separação deliberada em duas camadas:
+#   1. CONCEITO (este arquivo): "o que o item É" — ex.: fio de sutura é MATERIAL_SUTURA em qualquer hospital.
+#   2. PAPEL CONTRATUAL (vinculos/<contrato>.yaml, produzido na F3): "o que o contrato DIZ sobre ele"
+#      — ex.: no contrato PRT-2025-0417 o fio de sutura é MATERIAL DE ROTINA INCLUSO NO PACOTE.
+# Assim, trocar de hospital troca só o vínculo; a semântica e o motor de regras ficam iguais.
+versao: 0.2.0
+status: rascunho_pendente_G2
+
+conceitos:
+  # ---------------- raízes ----------------
+  - id: PROCEDIMENTO
+    pai: null
+    definicao: Ato médico/cirúrgico/consulta cobrado como procedimento.
+  - id: TAXA
+    pai: null
+    definicao: Taxa hospitalar pelo uso de estrutura ou por condição de atendimento.
+  - id: DIARIA
+    pai: null
+    definicao: Remuneração por dia de permanência em leito (enfermaria, apartamento, UTI).
+    observacao: A origem classifica diária como "Taxa" (tipo_item); aqui é conceito próprio porque a Cl. 3.4 a trata à parte — AMB-09.
+  - id: SADT
+    pai: null
+    definicao: Serviço auxiliar de diagnóstico e terapia (exames laboratoriais, imagem etc.).
+  - id: MATERIAL
+    pai: null
+    definicao: Material hospitalar consumido no atendimento.
+  - id: MEDICAMENTO
+    pai: null
+    definicao: Medicamento administrado no atendimento.
+
+  # ---------------- procedimentos ----------------
+  - id: PROCEDIMENTO_CIRURGICO
+    pai: PROCEDIMENTO
+    definicao: Procedimento cirúrgico realizado em sala cirúrgica.
+    atributos: [elegivel_a_pacote_por_contrato]
+  - id: CONSULTA
+    pai: PROCEDIMENTO
+    definicao: Consulta médica.
+    observacao: "\"Consulta em consultório\" aparece em 25 contas de internação — AMB-10."
+
+  # ---------------- taxas ----------------
+  - id: TAXA_SALA_CIRURGICA
+    pai: TAXA
+    definicao: Taxa pelo uso da sala cirúrgica, graduada por PORTE DA SALA (T22).
+    atributos: [porte_sala]
+    nao_confundir_com: ["porte anestésico", "porte do procedimento (CBHPM)"]
+  - id: TAXA_URGENCIA_EMERGENCIA
+    pai: TAXA
+    definicao: Taxa adicional cobrada por atendimento em caráter de urgência/emergência. É um ITEM, não um caráter.
+    nao_confundir_com: ["caráter de atendimento URGENCIA_EMERGENCIA", "regime PRONTO_SOCORRO"]
+
+  # ---------------- diárias ----------------
+  - id: DIARIA_ENFERMARIA
+    pai: DIARIA
+    definicao: Diária de leito de enfermaria.
+  - id: DIARIA_UTI
+    pai: DIARIA
+    definicao: Diária de leito de terapia intensiva.
+
+  # ---------------- SADT ----------------
+  - id: SADT_LABORATORIO
+    pai: SADT
+    definicao: Exame de análises clínicas.
+  - id: SADT_IMAGEM
+    pai: SADT
+    definicao: Exame de diagnóstico por imagem.
+
+  # ---------------- materiais ----------------
+  - id: MATERIAL_SUTURA
+    pai: MATERIAL
+    definicao: Fio de sutura (com ou sem agulha).
+  - id: MATERIAL_COMPRESSA
+    pai: MATERIAL
+    definicao: Compressa/gaze cirúrgica.
+  - id: MATERIAL_ESPECIAL
+    pai: MATERIAL
+    definicao: Material de maior custo/complexidade (cateteres, órteses, próteses etc.).
+
+  # ---------------- medicamentos ----------------
+  - id: MEDICAMENTO_ANTIMICROBIANO
+    pai: MEDICAMENTO
+    definicao: Antibiótico/antimicrobiano.
+  - id: MEDICAMENTO_ANALGESICO
+    pai: MEDICAMENTO
+    definicao: Analgésico/antitérmico.
+
+# Papéis que UM CONTRATO pode atribuir a conceitos/códigos. As definições ficam aqui (semântica);
+# os valores concretos de cada contrato ficam em vinculos/<id_contrato>.yaml (F3).
+papeis_contratuais:
+  - id: ITEM_COM_PRECO_PACTUADO
+    definicao: Código com valor unitário máximo (teto) pactuado em tabela contratual.
+  - id: PROCEDIMENTO_EM_PACOTE
+    definicao: Procedimento remunerado em regime de pacote fechado.
+  - id: ITEM_INCLUSO_NO_PACOTE
+    definicao: Item cujo valor já está contido no pacote e não pode ser cobrado à parte na mesma conta.
+  - id: ITEM_EXCLUIDO_DO_PACOTE
+    definicao: Item que o contrato declara expressamente fora do pacote (cobrável à parte).
+  - id: TAXA_CONDICIONADA_AO_CARATER
+    definicao: Taxa devida apenas quando o caráter do atendimento é um dos permitidos.
+  - id: ITEM_FORA_AUDITORIA_AUTOMATICA
+    definicao: Item que o contrato exclui da auditoria automática (p. ex. Cl. 2.3 — itens sem preço pactuado).

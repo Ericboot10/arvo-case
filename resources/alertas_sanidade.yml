@@ -1,0 +1,705 @@
+# GERADO por `python -m sanidade.gerar` a partir de sanidade/indicadores.yaml. NÃO EDITE À MÃO.
+# SQL alerts (v2) do bundle (CLI ≥ 0.279.0). Em `mode: development` as agendas ficam pausadas.
+# Destinos de notificação por dono: sanidade/destinos.yaml (IDs de notification destinations, G9).
+resources:
+  alerts:
+    sanidade_s01:
+      display_name: '[sanidade][ALTA] S01 · Índice-norte (efetivado ÷ sinistro)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S01'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S01 em ALERTA · dono pm_cs · RB-VALOR
+      custom_description: 'Ação: Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu | Runbook RB-VALOR (Valor abaixo da meta): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s02:
+      display_name: '[sanidade][ALTA] S02 · Atingimento da meta (run-rate)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S02'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S02 em ALERTA · dono pm_cs · RB-VALOR
+      custom_description: 'Ação: Reprojetar a trajetória com o Paulo; priorizar inteligências desligadas de maior valor | Runbook RB-VALOR (Valor abaixo da meta): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s03:
+      display_name: '[sanidade][MEDIA] S03 · Taxa de glosa sobre o apresentado, por regra'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S03'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S03 em ALERTA · dono analytics_engineer · RB-COMPORTAMENTO
+      custom_description: 'Ação: Separar sucesso (prestador parou de cobrar) de bug (mudou o dado): conferir S27/S28 do mesmo run | Runbook RB-COMPORTAMENTO (Mudança brusca de hit rate): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s05:
+      display_name: '[sanidade][ALTA] S05 · Precisão auditada (ponderada), por regra'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S05'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S05 em ALERTA · dono cientista_dados · RB-QUALIDADE
+      custom_description: 'Ação: Regra em envio automático cai para REVISAO_HUMANA (kill switch da regra) | Runbook RB-QUALIDADE (Qualidade da decisão abaixo do piso): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s06:
+      display_name: '[sanidade][ALTA] S06 · Limite inferior do IC 95% da precisão, por regra'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S06'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S06 em ALERTA · dono cientista_dados · RB-QUALIDADE
+      custom_description: 'Ação: Manter a regra em REVISAO_HUMANA e ampliar a amostra auditada (plano amostral F8) | Runbook RB-QUALIDADE (Qualidade da decisão abaixo do piso): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s07:
+      display_name: '[sanidade][MEDIA] S07 · Indevido não detectado (ponderado)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S07'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S07 em ALERTA · dono cientista_dados · RB-QUALIDADE
+      custom_description: 'Ação: Abrir os FN da rodada: regra nova (vira AMB) ou ruído de rotulagem (teste de concentração F8) | Runbook RB-QUALIDADE (Qualidade da decisão abaixo do piso): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s08:
+      display_name: '[sanidade][ALTA] S08 · Taxa de recurso'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S08'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S08 em ALERTA · dono juridico · RB-QUALIDADE
+      custom_description: 'Ação: Ler os recursos da regra; se o argumento se repete, revisar a cláusula com o Jurídico | Runbook RB-QUALIDADE (Qualidade da decisão abaixo do piso): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s09:
+      display_name: '[sanidade][CRITICA] S09 · Taxa de reversão (precisão em campo)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S09'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S09 em ALERTA · dono juridico · RB-QUALIDADE
+      custom_description: 'Ação: Kill switch da regra com reversão > 5% até adjudicação | Runbook RB-QUALIDADE (Qualidade da decisão abaixo do piso): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s10:
+      display_name: '[sanidade][MEDIA] S10 · Ativação (identificado em ligadas ÷ total)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S10'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S10 em ALERTA · dono pm_cs · RB-FUNIL
+      custom_description: 'Ação: Inteligência desligada nova? Levar ao cliente com o valor identificado | Runbook RB-FUNIL (Vazamento no funil de economia): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s11:
+      display_name: '[sanidade][ALTA] S11 · Envio à operadora (1 − retenção)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S11'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S11 em ALERTA · dono pm_cs · RB-FUNIL
+      custom_description: 'Ação: Retenção subiu: abrir motivos RET-* com o Dr. Ary (AMB-19) | Runbook RB-FUNIL (Vazamento no funil de economia): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s12:
+      display_name: '[sanidade][ALTA] S12 · Perda de registro no prestador'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S12'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S12 em ALERTA · dono pm_cs · RB-FUNIL
+      custom_description: 'Ação: Conciliar enviados × registrados com a TI da Parthenon (Alana): integração, rejeição ou prazo | Runbook RB-FUNIL (Vazamento no funil de economia): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s13:
+      display_name: '[sanidade][MEDIA] S13 · Efetivação ÷ benchmark Arvo, por inteligência'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S13'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S13 em ALERTA · dono juridico · RB-FUNIL
+      custom_description: 'Ação: Defensabilidade fraca: revisar justificativas e evidências da inteligência | Runbook RB-FUNIL (Vazamento no funil de economia): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s14:
+      display_name: '[sanidade][MEDIA] S14 · Contas com glosa, por prestador'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S14'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S14 em ALERTA · dono pm_cs · RB-PRESTADOR
+      custom_description: 'Ação: Atrito desproporcional: conversar com o prestador antes do próximo envio | Runbook RB-PRESTADOR (Atrito com o prestador): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s16:
+      display_name: '[sanidade][MEDIA] S16 · Itens glosados, por regra (hit rate)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S16'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S16 em ALERTA · dono analytics_engineer · RB-COMPORTAMENTO
+      custom_description: 'Ação: Queda brusca: sucesso ou bug? Se os indicadores de dados estão OK, é comportamento do prestador | Runbook RB-COMPORTAMENTO (Mudança brusca de hit rate): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s17:
+      display_name: '[sanidade][MEDIA] S17 · Cobertura de preço pactuado'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S17'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S17 em ALERTA · dono especialista_contas_medicas · RB-COBERTURA
+      custom_description: 'Ação: Códigos fora do Anexo I crescendo (Cl. 2.3): pedir aditivo ou tabela de referência | Runbook RB-COBERTURA (Cobertura do contrato caindo): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s18:
+      display_name: '[sanidade][CRITICA] S18 · Apontamentos que violam invariantes'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S18'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S18 em ALERTA · dono juridico · RB-INVARIANTE
+      custom_description: 'Ação: Envio bloqueado. Corrigir o motor ou a regra; reprocessar o run | Runbook RB-INVARIANTE (Invariante violado (envio bloqueado)): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s19:
+      display_name: '[sanidade][CRITICA] S19 · Itens com mais de uma glosa'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S19'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S19 em ALERTA · dono engenheiro_dados · RB-INVARIANTE
+      custom_description: 'Ação: Envio bloqueado. Duplicidade no motor ou no merge do fato | Runbook RB-INVARIANTE (Invariante violado (envio bloqueado)): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s20:
+      display_name: '[sanidade][CRITICA] S20 · Contas com glosa maior que o cobrado'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S20'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S20 em ALERTA · dono juridico · RB-INVARIANTE
+      custom_description: 'Ação: Envio bloqueado. Revisar a regra de pacote/escopo de conta | Runbook RB-INVARIANTE (Invariante violado (envio bloqueado)): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s21:
+      display_name: '[sanidade][CRITICA] S21 · Apontamentos sem item auditado (órfãos)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S21'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S21 em ALERTA · dono engenheiro_dados · RB-INVARIANTE
+      custom_description: 'Ação: Envio bloqueado. Lineage quebrada entre motor e fato | Runbook RB-INVARIANTE (Invariante violado (envio bloqueado)): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s22:
+      display_name: '[sanidade][ALTA] S22 · Aderência semântica (itens com conceito)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S22'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S22 em ALERTA · dono analytics_engineer · RB-SEMANTICA
+      custom_description: 'Ação: Código sem conceito: fila do Especialista (ops.ia_sugestoes_conceito); nunca mapear sem aprovação | Runbook RB-SEMANTICA (Aderência semântica degradada): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s23:
+      display_name: '[sanidade][MEDIA] S23 · Conflito semântico (ex.: PS × Eletivo)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S23'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S23 em ALERTA · dono especialista_contas_medicas · RB-SEMANTICA
+      custom_description: 'Ação: Conflitos vão para REVISAO_HUMANA (AMB-01); se crescem, o prestador mudou a codificação | Runbook RB-SEMANTICA (Aderência semântica degradada): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s24:
+      display_name: '[sanidade][CRITICA] S24 · Versões da semântica num mesmo run'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S24'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S24 em ALERTA · dono analytics_engineer · RB-SEMANTICA
+      custom_description: 'Ação: Envio bloqueado. Run misturou versões do glossário: reprocessar | Runbook RB-SEMANTICA (Aderência semântica degradada): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s25:
+      display_name: '[sanidade][CRITICA] S25 · Versões do contrato num mesmo run'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S25'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S25 em ALERTA · dono engenheiro_dados · RB-SEMANTICA
+      custom_description: 'Ação: Envio bloqueado. Conferir dim_contrato (SCD2) e vigência | Runbook RB-SEMANTICA (Aderência semântica degradada): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s26:
+      display_name: '[sanidade][CRITICA] S26 · Expectations de falha reprovadas (último run)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S26'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S26 em ALERTA · dono engenheiro_dados · RB-DADOS
+      custom_description: 'Ação: Envio bloqueado. Abrir ops.dq_resultados do run e a expectation reprovada | Runbook RB-DADOS (Qualidade de dados reprovada): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s27:
+      display_name: '[sanidade][ALTA] S27 · Taxa de quarentena (último run)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S27'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S27 em ALERTA · dono engenheiro_dados · RB-DADOS
+      custom_description: 'Ação: Ler os motivos da quarentena; código novo vai para a fila semântica (S22) | Runbook RB-DADOS (Qualidade de dados reprovada): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s28:
+      display_name: '[sanidade][MEDIA] S28 · Pass rate por dimensão de qualidade (último run)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S28'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S28 em ALERTA · dono engenheiro_dados · RB-DADOS
+      custom_description: 'Ação: Dimensão degradada: abrir as expectations dela e comparar com o run anterior | Runbook RB-DADOS (Qualidade de dados reprovada): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s30:
+      display_name: '[sanidade][ALTA] S30 · Schema válido'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S30'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S30 em ALERTA · dono cientista_dados · RB-IA
+      custom_description: 'Ação: revisar prompt/schema; rodar golden set do provedor | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s31:
+      display_name: '[sanidade][MEDIA] S31 · Recusa'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S31'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S31 em ALERTA · dono cientista_dados · RB-IA
+      custom_description: 'Ação: ver stop_detalhe; avaliar fallback de provedor | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s32:
+      display_name: '[sanidade][MEDIA] S32 · Truncamento'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S32'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S32 em ALERTA · dono cientista_dados · RB-IA
+      custom_description: 'Ação: aumentar max_output_tokens ou dividir a tarefa | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s33:
+      display_name: '[sanidade][ALTA] S33 · Erro'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S33'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S33 em ALERTA · dono engenheiro_dados · RB-IA
+      custom_description: 'Ação: provedor degradado: checar circuito e fallback | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s34:
+      display_name: '[sanidade][MEDIA] S34 · Fallback de provedor'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S34'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S34 em ALERTA · dono engenheiro_dados · RB-IA
+      custom_description: 'Ação: primário instável: abrir incidente com o provedor | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s35:
+      display_name: '[sanidade][CRITICA] S35 · Bloqueio por política de dados'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S35'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S35 em ALERTA · dono engenheiro_dados · RB-IA
+      custom_description: 'Ação: BUG de configuração: tarefa tentou enviar classe de dado proibida | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md | BLOQUEIA O ENVIO'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 3600
+      schedule:
+        quartz_cron_schedule: 0 0 * * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s36:
+      display_name: '[sanidade][ALTA] S36 · Bloqueio por circuito'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S36'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S36 em ALERTA · dono engenheiro_dados · RB-IA
+      custom_description: 'Ação: adapter com falhas consecutivas: investigar antes de reabrir | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s37:
+      display_name: '[sanidade][MEDIA] S37 · Latência p95 (ms)'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S37'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S37 em ALERTA · dono engenheiro_dados · RB-IA
+      custom_description: 'Ação: considerar tier menor ou batch | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo
+    sanidade_s39:
+      display_name: '[sanidade][ALTA] S39 · Drift de modelo'
+      query_text: SELECT count_if(status = 'ALERTA') AS n_alerta, concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes FROM ${var.catalog}.ops.v_sanidade_status WHERE
+        id_indicador = 'S39'
+      warehouse_id: ${var.warehouse_id}
+      custom_summary: S39 em ALERTA · dono cientista_dados · RB-IA
+      custom_description: 'Ação: modelo servido diferente do pedido ou mais de um modelo servido → rodar golden set antes de aceitar | Runbook RB-IA (Sanidade da camada de IA): sanidade/RUNBOOKS.md'
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_alerta
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: true
+          retrigger_seconds: 86400
+      schedule:
+        quartz_cron_schedule: 0 0 7 * * ?
+        timezone_id: America/Sao_Paulo

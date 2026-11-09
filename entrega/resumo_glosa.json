@@ -1,0 +1,58 @@
+{
+  "apontamentos": 369,
+  "itens_distintos": 369,
+  "vl_glosado_total": 121948.93,
+  "por_regra": {
+    "R1": {
+      "apontamentos": 175,
+      "vl_glosado": 39875.41
+    },
+    "R2": {
+      "apontamentos": 50,
+      "vl_glosado": 51081.77
+    },
+    "R3": {
+      "apontamentos": 67,
+      "vl_glosado": 4402.4
+    },
+    "R4": {
+      "apontamentos": 77,
+      "vl_glosado": 26589.35
+    }
+  },
+  "por_clausula": {
+    "2.2": {
+      "apontamentos": 175,
+      "vl_glosado": 39875.41
+    },
+    "3.3": {
+      "apontamentos": 117,
+      "vl_glosado": 55484.17
+    },
+    "4.2": {
+      "apontamentos": 77,
+      "vl_glosado": 26589.35
+    }
+  },
+  "revisao_humana_pelo_motor": 9,
+  "destino_hoje": {
+    "NAO_ENVIAR": {
+      "apontamentos": 369,
+      "vl_glosado": 121948.93
+    }
+  },
+  "versoes": {
+    "versao_regra": [
+      "R1@1.0.0",
+      "R2@1.0.0",
+      "R3@1.0.0",
+      "R4@1.0.0"
+    ],
+    "versao_contrato": [
+      "PRT-2025-0417@rascunho-F2"
+    ],
+    "versao_semantica": [
+      "0.2.0"
+    ]
+  }
+}
