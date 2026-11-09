@@ -1,0 +1,11 @@
+# GERADO por `python -m arvo.monitoring.gerar`. NÃO EDITE À MÃO.
+# Dashboard AI/BI do painel de sanidade. dataset_catalog troca o catálogo por target (arvo_dev | arvo_stg | arvo_prod):
+# os datasets do .lvdash.json não qualificam catálogo de propósito.
+resources:
+  dashboards:
+    monitoring_dashboard:
+      display_name: "arvo-monitoring-${bundle.target}"
+      file_path: ../../src/arvo/monitoring/dashboard/painel_sanidade.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      embed_credentials: false

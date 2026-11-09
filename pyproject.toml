@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arvo-case"
+version = "1.0.0"
+description = "Arvo × Parthenon: agente de glosa, camada semântica e agentes de IA (case de seleção)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["pyyaml", "pandas", "pdfplumber", "openpyxl", "pyspark==3.5.3"]
+
+[project.optional-dependencies]
+# agentes de IA: Claude (Anthropic), modelos e Genie do Databricks
+agents = ["anthropic", "databricks-sdk", "openai", "httpx"]
+dev = ["pytest", "pytest-timeout"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+arvo = ["**/*.yaml", "**/*.yml", "**/*.md", "**/*.sql", "**/*.json", "**/*.csv"]

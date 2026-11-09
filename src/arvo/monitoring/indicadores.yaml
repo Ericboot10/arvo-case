@@ -1,0 +1,489 @@
+# F9 · Catálogo de indicadores de sanidade (plano v2, seção 9). NEGÓCIO PRIMEIRO.
+# Fonte única: daqui saem a view ops.v_sanidade_status, os alertas SQL (resources/alerts/monitoring.yml),
+# o painel AI/BI (src/arvo/monitoring/dashboard/painel_sanidade.lvdash.json) e os runbooks (src/arvo/monitoring/RUNBOOKS.md).
+#   python -m arvo.monitoring.gerar
+#
+# Cada indicador tem: definição (métrica da camada semântica OU SQL), dono, banda, severidade, ação e runbook.
+#
+# Definição (uma das três):
+#   metrica: Mxx      fórmula de src/arvo/semantic/metricas.yaml. No Databricks vira MEASURE() da metric view;
+#                     localmente, a mesma fórmula sobre a tabela gold (mesma origem do gerador das metric views).
+#   sql: "..."        consulta própria que devolve `valor` (e opcionalmente `recorte`). Tabelas como {schema.tabela}.
+#   limite_ia: nome   limite de src/arvo/ai/config/alertas_ia.yaml sobre ops.v_ia_sanidade (não duplica limites).
+#
+# competencia (só para metrica):
+#   ultima            avalia a competência mais recente
+#   sigma             banda dinâmica: média ± k·σ das `janela` competências anteriores. Com menos de
+#                     `historico_min`, o status é CALIBRANDO (nunca alerta com banda inventada)
+#   (ausente)         avalia a tabela inteira (invariantes)
+#
+# Banda: {min, max} fixos, ou {sigma, janela, historico_min}. `origem` diz de onde vem o número.
+# Severidade:
+#   CRITICA   bloqueia o envio dos apontamentos do run (portão de envio) + alerta a cada hora
+#   ALTA      alerta diário; ação no mesmo dia útil
+#   MEDIA     alerta diário; ação na semana
+#   INFO      só painel
+# Status: OK | ALERTA | CALIBRANDO | SEM_DADO (fonte existe, sem linhas) | SEM_FONTE (tabela ainda não existe)
+versao: 1.0.0
+status: rascunho_pendente_G9
+pendencias: [AMB-21]
+
+camadas:
+  negocio:   {ordem: 1, titulo: Negócio}
+  semantica: {ordem: 2, titulo: Aderência semântica}
+  dados:     {ordem: 3, titulo: Engenharia de dados}
+  ia:        {ordem: 4, titulo: IA}
+
+indicadores:
+  # ================================================================= NEGÓCIO · VALOR
+  - id: S01
+    nome: Índice-norte (efetivado ÷ sinistro)
+    camada: negocio
+    familia: valor
+    metrica: M20
+    competencia: ultima
+    banda: {min: 0.02, origem: "meta contratada da Parthenon (2% do sinistro)"}
+    severidade: ALTA
+    dono: pm_cs
+    runbook: RB-VALOR
+    acao: "Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu"
+  - id: S02
+    nome: Atingimento da meta (run-rate)
+    camada: negocio
+    familia: valor
+    metrica: M19
+    competencia: ultima
+    banda: {min: 0.8, origem: "premissa AMB-21: 80% da trajetória planejada"}
+    severidade: ALTA
+    dono: pm_cs
+    runbook: RB-VALOR
+    acao: "Reprojetar a trajetória com o Paulo; priorizar inteligências desligadas de maior valor"
+  - id: S03
+    nome: Taxa de glosa sobre o apresentado, por regra
+    camada: negocio
+    familia: valor
+    metrica: M03
+    recorte: [regra_principal]
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 6, origem: "banda histórica ±3σ (plano 9.1)"}
+    severidade: MEDIA
+    dono: analytics_engineer
+    runbook: RB-COMPORTAMENTO
+    acao: "Separar sucesso (prestador parou de cobrar) de bug (mudou o dado): conferir S27/S28 do mesmo run"
+  - id: S04
+    nome: Gap cobrado vs pactuado (R$)
+    camada: negocio
+    familia: valor
+    metrica: M06
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 6, origem: "banda histórica ±3σ"}
+    severidade: INFO
+    dono: especialista_contas_medicas
+    runbook: RB-COBERTURA
+    acao: "Levar os maiores gaps por conceito à pauta de renegociação"
+
+  # ================================================================= NEGÓCIO · QUALIDADE DA DECISÃO
+  - id: S05
+    nome: Precisão auditada (ponderada), por regra
+    camada: negocio
+    familia: qualidade_decisao
+    metrica: M10
+    recorte: [regra_principal]
+    banda: {min: 0.98, origem: "critério de go-live por regra (plano F10)"}
+    severidade: ALTA
+    dono: cientista_dados
+    runbook: RB-QUALIDADE
+    acao: "Regra em envio automático cai para REVISAO_HUMANA (kill switch da regra)"
+  - id: S06
+    nome: Limite inferior do IC 95% da precisão, por regra
+    camada: negocio
+    familia: qualidade_decisao
+    sql: >
+      SELECT concat('regra_principal=', regra_principal) AS recorte,
+             (p + z*z/(2*n) - z*sqrt(p*(1-p)/n + z*z/(4*n*n))) / (1 + z*z/n) AS valor
+      FROM (SELECT regra_principal, count(*) AS n, avg(CAST(auditor_indevido AS INT)) AS p, 1.959964 AS z
+            FROM {gold.fato_auditoria_amostral} WHERE estrato = 'GLOSADO' AND regra_principal IS NOT NULL
+            GROUP BY regra_principal) t
+    fontes: [gold.fato_auditoria_amostral]
+    banda: {min: 0.95, origem: "piso de envio automático (custos.yaml, AMB-20)"}
+    severidade: ALTA
+    dono: cientista_dados
+    runbook: RB-QUALIDADE
+    acao: "Manter a regra em REVISAO_HUMANA e ampliar a amostra auditada (plano amostral F8)"
+  - id: S07
+    nome: Indevido não detectado (ponderado)
+    camada: negocio
+    familia: qualidade_decisao
+    metrica: M25
+    banda: {max: 0.05, origem: "premissa AMB-21"}
+    severidade: MEDIA
+    dono: cientista_dados
+    runbook: RB-QUALIDADE
+    acao: "Abrir os FN da rodada: regra nova (vira AMB) ou ruído de rotulagem (teste de concentração F8)"
+  - id: S08
+    nome: Taxa de recurso
+    camada: negocio
+    familia: qualidade_decisao
+    metrica: M12
+    competencia: ultima
+    banda: {max: 0.15, origem: "premissa AMB-21 até existir benchmark por regra"}
+    severidade: ALTA
+    dono: juridico
+    runbook: RB-QUALIDADE
+    acao: "Ler os recursos da regra; se o argumento se repete, revisar a cláusula com o Jurídico"
+  - id: S09
+    nome: Taxa de reversão (precisão em campo)
+    camada: negocio
+    familia: qualidade_decisao
+    metrica: M13
+    competencia: ultima
+    banda: {max: 0.05, origem: "critério de go-live (plano F10)"}
+    severidade: CRITICA
+    dono: juridico
+    runbook: RB-QUALIDADE
+    acao: "Kill switch da regra com reversão > 5% até adjudicação"
+
+  # ================================================================= NEGÓCIO · FUNIL
+  - id: S10
+    nome: Ativação (identificado em ligadas ÷ total)
+    camada: negocio
+    familia: funil
+    metrica: M22
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 3, origem: "banda histórica ±3σ"}
+    severidade: MEDIA
+    dono: pm_cs
+    runbook: RB-FUNIL
+    acao: "Inteligência desligada nova? Levar ao cliente com o valor identificado"
+  - id: S11
+    nome: Envio à operadora (1 − retenção)
+    camada: negocio
+    familia: funil
+    metrica: M23
+    recorte: [inteligencia]
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 3, origem: "banda histórica ±3σ"}
+    severidade: ALTA
+    dono: pm_cs
+    runbook: RB-FUNIL
+    acao: "Retenção subiu: abrir motivos RET-* com o Dr. Ary (AMB-19)"
+  - id: S12
+    nome: Perda de registro no prestador
+    camada: negocio
+    familia: funil
+    metrica: M17
+    competencia: ultima
+    banda: {max: 0.05, origem: "plano 9.1 (falha de integração)"}
+    severidade: ALTA
+    dono: pm_cs
+    runbook: RB-FUNIL
+    acao: "Conciliar enviados × registrados com a TI da Parthenon (Alana): integração, rejeição ou prazo"
+  - id: S13
+    nome: Efetivação ÷ benchmark Arvo, por inteligência
+    camada: negocio
+    familia: funil
+    sql: >
+      SELECT concat('inteligencia=', inteligencia) AS recorte,
+             (SUM(vl_efetivado) / NULLIF(SUM(vl_enviado_prestador), 0)) / NULLIF(MAX(taxa_efetivacao_benchmark), 0) AS valor
+      FROM {gold.fato_funil_economia}
+      WHERE competencia = (SELECT max(competencia) FROM {gold.fato_funil_economia}) AND status_inteligencia = 'Ligada'
+      GROUP BY inteligencia
+    fontes: [gold.fato_funil_economia]
+    banda: {min: 0.8, origem: "premissa AMB-21: 80% do benchmark de efetivação da Arvo"}
+    severidade: MEDIA
+    dono: juridico
+    runbook: RB-FUNIL
+    acao: "Defensabilidade fraca: revisar justificativas e evidências da inteligência"
+
+  # ================================================================= NEGÓCIO · RELAÇÃO COM PRESTADOR E COMPORTAMENTO
+  - id: S14
+    nome: Contas com glosa, por prestador
+    camada: negocio
+    familia: relacao_prestador
+    metrica: M05
+    recorte: [id_prestador]
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 6, origem: "banda histórica ±3σ do prestador"}
+    severidade: MEDIA
+    dono: pm_cs
+    runbook: RB-PRESTADOR
+    acao: "Atrito desproporcional: conversar com o prestador antes do próximo envio"
+  - id: S15
+    nome: Concentração da glosa nas 10 maiores contas
+    camada: negocio
+    familia: relacao_prestador
+    sql: >
+      SELECT 'total' AS recorte, SUM(CASE WHEN rk <= 10 THEN g END) / NULLIF(SUM(g), 0) AS valor
+      FROM (SELECT id_conta, SUM(vl_glosado) AS g, row_number() OVER (ORDER BY SUM(vl_glosado) DESC) AS rk
+            FROM {gold.fato_item_auditado} WHERE glosado GROUP BY id_conta) t
+    fontes: [gold.fato_item_auditado]
+    banda: {max: 0.5, origem: "premissa AMB-21"}
+    severidade: INFO
+    dono: pm_cs
+    runbook: RB-PRESTADOR
+    acao: "Concentração anômala: conferir se uma conta isolada distorce o run"
+  - id: S16
+    nome: Itens glosados, por regra (hit rate)
+    camada: negocio
+    familia: comportamento
+    metrica: M04
+    recorte: [regra_principal]
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 6, origem: "banda histórica ±3σ"}
+    severidade: MEDIA
+    dono: analytics_engineer
+    runbook: RB-COMPORTAMENTO
+    acao: "Queda brusca: sucesso ou bug? Se os indicadores de dados estão OK, é comportamento do prestador"
+  - id: S17
+    nome: Cobertura de preço pactuado
+    camada: negocio
+    familia: cobertura
+    metrica: M07
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 6, origem: "banda histórica ±3σ"}
+    severidade: MEDIA
+    dono: especialista_contas_medicas
+    runbook: RB-COBERTURA
+    acao: "Códigos fora do Anexo I crescendo (Cl. 2.3): pedir aditivo ou tabela de referência"
+
+  # ================================================================= NEGÓCIO · INVARIANTES (sempre 0; bloqueiam o envio)
+  - id: S18
+    nome: Apontamentos que violam invariantes
+    camada: negocio
+    familia: invariantes
+    metrica: M26
+    banda: {max: 0, origem: "invariante jurídico"}
+    severidade: CRITICA
+    dono: juridico
+    runbook: RB-INVARIANTE
+    acao: "Envio bloqueado. Corrigir o motor ou a regra; reprocessar o run"
+  - id: S19
+    nome: Itens com mais de uma glosa
+    camada: negocio
+    familia: invariantes
+    sql: >
+      SELECT 'total' AS recorte, CAST(count(*) AS DOUBLE) AS valor
+      FROM (SELECT id_item FROM {gold.fato_apontamento} GROUP BY id_item HAVING count(*) > 1) t
+    fontes: [gold.fato_apontamento]
+    banda: {max: 0, origem: "invariante: no máximo 1 glosa por item (grão do fato)"}
+    severidade: CRITICA
+    dono: engenheiro_dados
+    runbook: RB-INVARIANTE
+    acao: "Envio bloqueado. Duplicidade no motor ou no merge do fato"
+  - id: S20
+    nome: Contas com glosa maior que o cobrado
+    camada: negocio
+    familia: invariantes
+    sql: >
+      SELECT 'total' AS recorte, CAST(count(*) AS DOUBLE) AS valor
+      FROM (SELECT id_conta FROM {gold.fato_item_auditado} GROUP BY id_conta
+            HAVING SUM(coalesce(vl_glosado, 0)) > SUM(vl_cobrado)) t
+    fontes: [gold.fato_item_auditado]
+    banda: {max: 0, origem: "invariante: Σ glosa da conta ≤ total da conta"}
+    severidade: CRITICA
+    dono: juridico
+    runbook: RB-INVARIANTE
+    acao: "Envio bloqueado. Revisar a regra de pacote/escopo de conta"
+  - id: S21
+    nome: Apontamentos sem item auditado (órfãos)
+    camada: negocio
+    familia: invariantes
+    sql: >
+      SELECT 'total' AS recorte, CAST(count(*) AS DOUBLE) AS valor
+      FROM {gold.fato_apontamento} a LEFT ANTI JOIN {gold.fato_item_auditado} i ON a.id_item = i.id_item
+    fontes: [gold.fato_apontamento, gold.fato_item_auditado]
+    banda: {max: 0, origem: "invariante: integridade referencial"}
+    severidade: CRITICA
+    dono: engenheiro_dados
+    runbook: RB-INVARIANTE
+    acao: "Envio bloqueado. Lineage quebrada entre motor e fato"
+
+  # ================================================================= ADERÊNCIA SEMÂNTICA
+  - id: S22
+    nome: Aderência semântica (itens com conceito)
+    camada: semantica
+    familia: aderencia
+    metrica: M08
+    banda: {min: 1.0, origem: "meta da camada semântica (100%)"}
+    severidade: ALTA
+    dono: analytics_engineer
+    runbook: RB-SEMANTICA
+    acao: "Código sem conceito: fila do Especialista (ops.ia_sugestoes_conceito); nunca mapear sem aprovação"
+  - id: S23
+    nome: "Conflito semântico (ex.: PS × Eletivo)"
+    camada: semantica
+    familia: aderencia
+    metrica: M09
+    banda: {max: 0.01, origem: "premissa AMB-21"}
+    severidade: MEDIA
+    dono: especialista_contas_medicas
+    runbook: RB-SEMANTICA
+    acao: "Conflitos vão para REVISAO_HUMANA (AMB-01); se crescem, o prestador mudou a codificação"
+  - id: S24
+    nome: Versões da semântica num mesmo run
+    camada: semantica
+    familia: versionamento
+    sql: >
+      SELECT concat('run_id=', run_id) AS recorte, CAST(count(DISTINCT versao_semantica) AS DOUBLE) AS valor
+      FROM {gold.fato_item_auditado} GROUP BY run_id
+    fontes: [gold.fato_item_auditado]
+    banda: {max: 1, origem: "invariante: um run, uma versão"}
+    severidade: CRITICA
+    dono: analytics_engineer
+    runbook: RB-SEMANTICA
+    acao: "Envio bloqueado. Run misturou versões do glossário: reprocessar"
+  - id: S25
+    nome: Versões do contrato num mesmo run
+    camada: semantica
+    familia: versionamento
+    sql: >
+      SELECT concat('run_id=', run_id) AS recorte, CAST(count(DISTINCT versao_contrato) AS DOUBLE) AS valor
+      FROM {gold.fato_item_auditado} GROUP BY run_id
+    fontes: [gold.fato_item_auditado]
+    banda: {max: 1, origem: "invariante: um run, um contrato vigente"}
+    severidade: CRITICA
+    dono: engenheiro_dados
+    runbook: RB-SEMANTICA
+    acao: "Envio bloqueado. Conferir dim_contrato (SCD2) e vigência"
+
+  # ================================================================= ENGENHARIA DE DADOS
+  - id: S26
+    nome: Expectations de falha reprovadas (último run)
+    camada: dados
+    familia: qualidade
+    sql: >
+      SELECT 'total' AS recorte, CAST(coalesce(SUM(reprovados), 0) AS DOUBLE) AS valor
+      FROM {ops.dq_resultados}
+      WHERE acao = 'fail' AND run_id = (SELECT max_by(run_id, executado_em) FROM {ops.dq_resultados})
+    fontes: [ops.dq_resultados]
+    banda: {max: 0, origem: "expectations E* com ação fail (src/arvo/medallion/expectations.yaml)"}
+    severidade: CRITICA
+    dono: engenheiro_dados
+    runbook: RB-DADOS
+    acao: "Envio bloqueado. Abrir ops.dq_resultados do run e a expectation reprovada"
+  - id: S27
+    nome: Taxa de quarentena (último run)
+    camada: dados
+    familia: qualidade
+    sql: >
+      SELECT 'total' AS recorte,
+             (SELECT count(*) FROM {quarantine.item_conta_rejeitado}) / NULLIF((SELECT count(*) FROM {bronze.sinistro_raw}), 0) AS valor
+    fontes: [quarantine.item_conta_rejeitado, bronze.sinistro_raw]
+    banda: {max: 0.02, origem: "premissa AMB-21"}
+    severidade: ALTA
+    dono: engenheiro_dados
+    runbook: RB-DADOS
+    acao: "Ler os motivos da quarentena; código novo vai para a fila semântica (S22)"
+  - id: S28
+    nome: Pass rate por dimensão de qualidade (último run)
+    camada: dados
+    familia: qualidade
+    sql: >
+      SELECT concat('dimensao=', dimensao) AS recorte, 1 - SUM(reprovados) / NULLIF(SUM(avaliados), 0) AS valor
+      FROM {ops.dq_resultados}
+      WHERE run_id = (SELECT max_by(run_id, executado_em) FROM {ops.dq_resultados})
+      GROUP BY dimensao
+    fontes: [ops.dq_resultados]
+    banda: {min: 0.99, origem: "premissa AMB-21"}
+    severidade: MEDIA
+    dono: engenheiro_dados
+    runbook: RB-DADOS
+    acao: "Dimensão degradada: abrir as expectations dela e comparar com o run anterior"
+
+  # ================================================================= IA (limites em src/arvo/ai/config/alertas_ia.yaml)
+  - {id: S30, nome: Schema válido, camada: ia, familia: qualidade_saida, limite_ia: taxa_schema_valido, severidade: ALTA, dono: cientista_dados, runbook: RB-IA}
+  - {id: S31, nome: Recusa, camada: ia, familia: qualidade_saida, limite_ia: taxa_recusa, severidade: MEDIA, dono: cientista_dados, runbook: RB-IA}
+  - {id: S32, nome: Truncamento, camada: ia, familia: qualidade_saida, limite_ia: taxa_truncamento, severidade: MEDIA, dono: cientista_dados, runbook: RB-IA}
+  - {id: S33, nome: Erro, camada: ia, familia: resiliencia, limite_ia: taxa_erro, severidade: ALTA, dono: engenheiro_dados, runbook: RB-IA}
+  - {id: S34, nome: Fallback de provedor, camada: ia, familia: resiliencia, limite_ia: taxa_fallback, severidade: MEDIA, dono: engenheiro_dados, runbook: RB-IA}
+  - {id: S35, nome: Bloqueio por política de dados, camada: ia, familia: governanca, limite_ia: taxa_bloqueio_politica, severidade: CRITICA, dono: engenheiro_dados, runbook: RB-IA}
+  - {id: S36, nome: Bloqueio por circuito, camada: ia, familia: resiliencia, limite_ia: taxa_bloqueio_circuito, severidade: ALTA, dono: engenheiro_dados, runbook: RB-IA}
+  - {id: S37, nome: Latência p95 (ms), camada: ia, familia: custo_latencia, limite_ia: latencia_p95_ms, severidade: MEDIA, dono: engenheiro_dados, runbook: RB-IA}
+  - {id: S38, nome: Parâmetro pedido e não aplicado, camada: ia, familia: governanca, limite_ia: pct_param_ignorado, severidade: INFO, dono: cientista_dados, runbook: RB-IA}
+  - {id: S39, nome: Drift de modelo, camada: ia, familia: governanca, limite_ia: drift_modelo, severidade: ALTA, dono: cientista_dados, runbook: RB-IA}
+
+runbooks:
+  RB-VALOR:
+    titulo: Valor abaixo da meta
+    gatilho: [S01, S02]
+    passos:
+      - "Abrir a página Negócio do painel e a árvore do norte (M21 × M22 × M23 × M24 × M18)"
+      - "Identificar o fator com maior queda contra a competência anterior"
+      - "Encaminhar ao dono do fator: identificação (Arvo), ativação (cliente), envio (Dr. Ary), registro (Alana), efetivação (Jurídico)"
+      - "Registrar a hipótese e o plano no decision log da conta"
+    escalonamento: "PM/CS → Paulo (Parthenon) na reunião mensal"
+  RB-QUALIDADE:
+    titulo: Qualidade da decisão abaixo do piso
+    gatilho: [S05, S06, S07, S08, S09]
+    passos:
+      - "Rebaixar a regra para REVISAO_HUMANA (kill switch em src/arvo/rules/regras.yaml, nova versão)"
+      - "Separar FP por causa (avaliacao_cientifica.divergencias.classificar)"
+      - "Se a causa é regra: abrir AMB e revisar com Jurídico e Auditor. Se é rótulo: adjudicação cega (κ ≥ 0,8)"
+      - "Reavaliar com o plano amostral da F8 antes de religar o envio automático"
+    escalonamento: "Cientista → Dr. Ary (auditoria) e Jurídico"
+  RB-FUNIL:
+    titulo: Vazamento no funil de economia
+    gatilho: [S10, S11, S12, S13]
+    passos:
+      - "Localizar a etapa e a inteligência que vazaram (página Negócio)"
+      - "Retenção: motivos RET-* com a auditoria. Registro: conciliação com a TI. Efetivação: evidências e recursos"
+      - "Quantificar o valor perdido e propor a ação ao cliente"
+    escalonamento: "PM/CS → cliente (Dr. Ary, Alana ou Paulo, conforme a etapa)"
+  RB-PRESTADOR:
+    titulo: Atrito com o prestador
+    gatilho: [S14, S15]
+    passos:
+      - "Abrir as contas do prestador no run e conferir se uma regra concentra a glosa"
+      - "Validar com o Especialista se a cobrança mudou ou se a regra está agressiva"
+      - "Combinar comunicação prévia com o prestador antes do envio"
+    escalonamento: "PM/CS → relacionamento com prestadores da Parthenon"
+  RB-COMPORTAMENTO:
+    titulo: Mudança brusca de hit rate
+    gatilho: [S03, S16]
+    passos:
+      - "Checar S26–S28 (dados) e S22–S25 (semântica) do mesmo run"
+      - "Dados e semântica OK: é comportamento do prestador (sucesso preventivo, M28/M29)"
+      - "Algo fora: tratar como bug e reprocessar"
+    escalonamento: "Analytics Engineer → Engenharia de Dados"
+  RB-COBERTURA:
+    titulo: Cobertura do contrato caindo
+    gatilho: [S04, S17]
+    passos:
+      - "Listar códigos sem preço pactuado com maior valor apresentado"
+      - "Classificar: fora do Anexo I (Cl. 2.3), código novo ou erro de mapeamento"
+      - "Levar à renegociação ou à fila semântica"
+    escalonamento: "Especialista em Contas → Jurídico"
+  RB-INVARIANTE:
+    titulo: Invariante violado (envio bloqueado)
+    gatilho: [S18, S19, S20, S21]
+    passos:
+      - "O portão de envio já bloqueou o run (sanidade.portao). Não liberar manualmente"
+      - "Reproduzir localmente com o mesmo run_id e versões (contrato, semântica, regras)"
+      - "Corrigir, adicionar teste de regressão e reprocessar"
+      - "Liberar o envio só com o indicador de volta a 0"
+    escalonamento: "Engenharia de Dados → Jurídico (se algum apontamento já tiver saído)"
+  RB-SEMANTICA:
+    titulo: Aderência semântica degradada
+    gatilho: [S22, S23, S24, S25]
+    passos:
+      - "Códigos sem conceito: rodar a sugestão de conceito (ia.tarefas.sugerir_conceito) e enviar à fila do Especialista"
+      - "Conflitos: conferir o domínio canônico (src/arvo/semantic/dominios.yaml) e o AMB-01"
+      - "Versões misturadas: bloquear e reprocessar com a versão única"
+    escalonamento: "Analytics Engineer → Especialista em Contas"
+  RB-DADOS:
+    titulo: Qualidade de dados reprovada
+    gatilho: [S26, S27, S28]
+    passos:
+      - "Abrir ops.dq_resultados do run e as linhas em quarentena"
+      - "Classificar: arquivo malformado (devolver ao cliente), código novo (fila semântica) ou bug (corrigir)"
+      - "Freshness, completude e drift de volume: usar o data quality monitoring (anomaly detection) do Unity Catalog nos schemas silver e gold"
+    escalonamento: "Engenharia de Dados → TI do cliente (arquivo)"
+  RB-IA:
+    titulo: Sanidade da camada de IA
+    gatilho: [S30, S31, S32, S33, S34, S35, S36, S37, S38, S39]
+    passos:
+      - "Abrir ops.v_ia_sanidade e ops.llm_calls da tarefa × adapter"
+      - "Seguir a ação do limite em src/arvo/ai/config/alertas_ia.yaml"
+      - "Drift de modelo ou troca de provedor: rodar o golden set (python -m arvo.ai.avaliacao.golden) antes de aceitar"
+      - "Bloqueio por política: é bug de configuração. Nenhum dado de sinistro pode sair para provedor externo"
+    escalonamento: "Cientista de Dados → Engenharia de Dados"

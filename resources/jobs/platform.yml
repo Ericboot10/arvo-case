@@ -1,0 +1,15 @@
+# Domínio platform · ambiente, permissões e máscaras. Padrão de nomes: docs/conventions.md.
+# Caminhos relativos a este arquivo. Tasks de notebook sem cluster declarado rodam em serverless.
+resources:
+  jobs:
+    platform_smoke_test:
+      name: arvo-platform-smoke-test-${bundle.target}
+      description: "Gate G4: prova que o ambiente está provisionado, com permissões, máscaras e escrita em ops."
+      tasks:
+        - task_key: verify_environment
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/00_hello_ambiente.py
+            base_parameters:
+              catalog: ${var.catalog}
+              alvo: ${bundle.target}
+      tags: {project: arvo, domain: platform, phase: F4}

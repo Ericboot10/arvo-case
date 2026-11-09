@@ -1,0 +1,27 @@
+# Domínio monitoring · metric views, sanidade de IA, status dos indicadores e portão de envio.
+# Painel e alertas são recursos próprios (resources/dashboards, resources/alerts), gerados por arvo.monitoring.gerar.
+resources:
+  jobs:
+    monitoring_refresh:
+      name: arvo-monitoring-refresh-${bundle.target}
+      description: "Metric views → sanidade de IA → ops.v_sanidade_status → portão de envio."
+      tasks:
+        - task_key: metric_views
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../semantic/databricks/02_metric_views.sql"}
+        - task_key: ai_health
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../ai/databricks/v_ia_sanidade.sql"}
+        - task_key: health_status
+          depends_on: [{task_key: metric_views}, {task_key: ai_health}]
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../monitoring/databricks/v_sanidade_status.sql"}
+        - task_key: send_gate
+          depends_on: [{task_key: health_status}]
+          notebook_task:
+            notebook_path: ../../src/arvo/monitoring/notebooks/portao_envio.py
+            base_parameters: {catalog: "${var.catalog}"}
+      tags: {project: arvo, domain: monitoring, phase: F9}

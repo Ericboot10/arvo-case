@@ -1,25 +1,27 @@
 # =====================================================================================================
 # Declarative Automation Bundle (antigo Databricks Asset Bundles) · projeto Arvo × Parthenon
 # Código promove entre ambientes; dado não promove (ADR-003). Um comando por ambiente:
-#   databricks bundle validate -t dev && databricks bundle deploy -t dev && databricks bundle run plataforma_hello -t dev
+#   databricks bundle validate -t dev && databricks bundle deploy -t dev && databricks bundle run platform_smoke_test -t dev
 # =====================================================================================================
 bundle:
   name: arvo-case
 
 include:
-  - resources/*.yml
+  - resources/*/*.yml          # jobs/, pipelines/, dashboards/, alerts/: um arquivo por domínio (docs/conventions.md)
 
 # O código vai para o workspace. Dados do case (sinistro real, gabarito, planilha, PDF) NÃO vão:
 # entram por Volume, com controle de acesso (ADR-002).
 sync:
   exclude:
-    - arvo.case/**
+    - data/case/**
     - "*.csv"
     - "*.xlsx"
     - "*.pdf"
-    - contratos/runs/**
-    - dados_sinteticos/**
-    - sanidade/saida_local/**
+    - outputs/runs/**
+    - outputs/synthetic_data/**
+    - src/arvo/monitoring/saida_local/**
+    - outputs/**
+    - "*.egg-info/**"
     - "**/__pycache__/**"
 
 variables:
@@ -53,22 +55,21 @@ targets:
     resources:
       jobs:
         # Só no dev corporativo: sinistro SINTÉTICO para quem não pode ver dado real (ADR-002).
-        dev_dados_sinteticos:
-          name: arvo-dev-dados-sinteticos-${bundle.target}
+        platform_synthetic_data:
+          name: arvo-platform-synthetic-data-${bundle.target}
           description: "Gera sinistro SINTÉTICO rotulado no Volume de landing. Só faz sentido em arvo_dev (ADR-002)."
           tasks:
-            - task_key: gerar
+            - task_key: generate
               notebook_task:
-                notebook_path: ./plataforma/notebooks/01_dados_sinteticos.py
+                notebook_path: ./src/arvo/platform/notebooks/01_dados_sinteticos.py
                 base_parameters:
                   catalog: ${var.catalog}
-          tags:
-            fase: F4
+          tags: {project: arvo, domain: platform, phase: F4}
 
   # Databricks Free Edition: um workspace serverless, sem account console nem service principals.
   # Roda com os DADOS DO CASE (sinistro, gabarito, contrato e planilha), sem nenhum dado gerado.
   # A IA fica em modo real: sem chave de provedor, a F3 não roda aqui (nada de telemetria simulada).
-  # Passo a passo em plataforma/FREE_EDITION.md.
+  # Passo a passo em docs/databricks-free-edition.md.
   free:
     mode: development
     workspace:
@@ -81,14 +82,15 @@ targets:
           warehouse: "Serverless Starter Warehouse"
     resources:
       jobs:
-        free_preparar_ambiente:
-          name: arvo-free-preparar-ambiente
-          description: "Free Edition: cria arvo_dev (schemas e volumes). Os dados do case sobem por plataforma/subir_dados_case.sh."
+        platform_setup:
+          name: arvo-platform-setup-${bundle.target}
+          description: "Free Edition: cria arvo_dev (schemas e volumes). Os dados do case sobem por src/arvo/platform/subir_dados_case.sh."
           tasks:
-            - task_key: catalogo
+            - task_key: create_catalog
               notebook_task:
-                notebook_path: ./plataforma/notebooks/executar_sql.py
-                base_parameters: {catalog: arvo_dev, arquivo: "../../plataforma/sql/00_free_edition.sql"}
+                notebook_path: ./src/arvo/platform/notebooks/executar_sql.py
+                base_parameters: {catalog: arvo_dev, arquivo: "../sql/00_free_edition.sql"}
+          tags: {project: arvo, domain: platform, phase: F4}
 
   stg:
     mode: production           # valida run_as/permissões; recursos sem prefixo de usuário

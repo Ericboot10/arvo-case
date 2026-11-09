@@ -1,0 +1,80 @@
+# Benchmark do agente analista = perguntas de negócio de src/arvo/semantic/perguntas_negocio.yaml que já têm dado hoje.
+# A resposta certa NÃO é escrita à mão: é o resultado do `sql` de referência, executado no workspace na hora.
+# Cada pergunta vira também um benchmark do espaço Genie (publicado com o espaço).
+#   alvo genie   → o Genie responde à pergunta; passa se os números de referência aparecem no resultado dele
+#   alvo metrica → a consulta estruturada (`metrica`) montada pelo catálogo; passa se bate com a referência
+#   alvo agente  → a resposta final do agente; passa se os números de referência aparecem no texto
+# `conferir`: colunas numéricas da referência que precisam aparecer (todas as linhas, até 6).
+versao: 1
+perguntas:
+  - id: B01
+    origem: Q01
+    pergunta: "Quanto foi glosado no mês por cláusula do contrato, em valor e em número de itens?"
+    sql: |
+      SELECT clausula_principal, MEASURE(valor_glosado) AS valor_glosado, MEASURE(itens_glosados) AS itens_glosados
+      FROM <catalogo>.semantic.mv_auditoria_glosa WHERE clausula_principal IS NOT NULL
+      GROUP BY ALL ORDER BY valor_glosado DESC
+    conferir: [valor_glosado]
+    metrica: {view: mv_auditoria_glosa, medidas: [valor_glosado, itens_glosados], dimensoes: [clausula_principal],
+              filtros: [], ordenar_por: valor_glosado, limite: 10}
+  - id: B02
+    origem: Q01
+    pergunta: "Qual o valor total glosado e qual a taxa de glosa sobre o valor apresentado no mês?"
+    sql: |
+      SELECT MEASURE(valor_glosado) AS valor_glosado, MEASURE(valor_apresentado) AS valor_apresentado,
+             MEASURE(taxa_glosa) AS taxa_glosa
+      FROM <catalogo>.semantic.mv_auditoria_glosa
+    conferir: [valor_glosado, taxa_glosa]
+    metrica: {view: mv_auditoria_glosa, medidas: [valor_glosado, valor_apresentado, taxa_glosa], dimensoes: [],
+              filtros: [], ordenar_por: "", limite: 1}
+  - id: B03
+    origem: Q03
+    pergunta: "Qual código TUSS tem o maior gap entre o valor cobrado e o pactuado no contrato, e de quanto?"
+    sql: |
+      SELECT cod_tuss, conceito, MEASURE(gap_cobrado_vs_pactuado) AS gap_cobrado_vs_pactuado
+      FROM <catalogo>.semantic.mv_auditoria_glosa
+      GROUP BY ALL ORDER BY gap_cobrado_vs_pactuado DESC LIMIT 1
+    conferir: [gap_cobrado_vs_pactuado]
+    metrica: {view: mv_auditoria_glosa, medidas: [gap_cobrado_vs_pactuado], dimensoes: [cod_tuss, conceito],
+              filtros: [], ordenar_por: gap_cobrado_vs_pactuado, limite: 1}
+  - id: B04
+    origem: Q09
+    pergunta: "Que fração das contas do prestador recebeu ao menos uma glosa no mês?"
+    sql: |
+      SELECT MEASURE(pct_contas_com_glosa) AS pct_contas_com_glosa FROM <catalogo>.semantic.mv_auditoria_glosa
+    conferir: [pct_contas_com_glosa]
+    metrica: {view: mv_auditoria_glosa, medidas: [pct_contas_com_glosa], dimensoes: [], filtros: [],
+              ordenar_por: "", limite: 1}
+  - id: B05
+    origem: Q08
+    pergunta: "Quanto do sinistro tem conflito semântico (Pronto Socorro com caráter Eletivo)? Dê a taxa sobre os itens."
+    sql: |
+      SELECT MEASURE(taxa_conflito_semantico) AS taxa_conflito_semantico FROM <catalogo>.semantic.mv_auditoria_glosa
+    conferir: [taxa_conflito_semantico]
+    metrica: {view: mv_auditoria_glosa, medidas: [taxa_conflito_semantico], dimensoes: [], filtros: [],
+              ordenar_por: "", limite: 1}
+  - id: B06
+    origem: Q06
+    pergunta: "Na competência mais recente da planilha da rede, qual o índice-norte e o atingimento da meta de 2%?"
+    sql: |
+      SELECT competencia, MEASURE(indice_norte) AS indice_norte, MEASURE(atingimento_meta) AS atingimento_meta
+      FROM <catalogo>.semantic.mv_funil_economia GROUP BY ALL ORDER BY competencia DESC LIMIT 1
+    conferir: [indice_norte, atingimento_meta]
+    metrica: {view: mv_funil_economia, medidas: [indice_norte, atingimento_meta], dimensoes: [competencia],
+              filtros: [], ordenar_por: competencia, limite: 1}
+  - id: B07
+    origem: Q10
+    pergunta: "Qual a economia efetivada por tipo de inteligência, somando todas as competências da planilha?"
+    sql: |
+      SELECT tipo_inteligencia, MEASURE(economia_efetivada) AS economia_efetivada
+      FROM <catalogo>.semantic.mv_funil_economia GROUP BY ALL ORDER BY economia_efetivada DESC
+    conferir: [economia_efetivada]
+    metrica: {view: mv_funil_economia, medidas: [economia_efetivada], dimensoes: [tipo_inteligencia], filtros: [],
+              ordenar_por: economia_efetivada, limite: 10}
+  - id: B08
+    origem: F8
+    pergunta: "Qual a precisão e o recall do motor de regras contra o gabarito do case?"
+    sql: |
+      SELECT precisao, recall FROM <catalogo>.ops.v_precisao_recall WHERE recorte = 'total'
+    conferir: [precisao, recall]
+    metrica: null        # não é metric view: só Genie e agente

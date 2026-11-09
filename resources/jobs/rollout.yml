@@ -1,0 +1,17 @@
+# Domínio rollout · destino de cada glosa pelo estágio da regra, portão de sanidade e teto de valor.
+resources:
+  jobs:
+    rollout_decide:
+      name: arvo-rollout-decide-${bundle.target}
+      description: "Destino de cada apontamento pelo estágio da regra, portão de sanidade e teto de valor. Nada é enviado aqui."
+      tasks:
+        - task_key: create_tables
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../rollout/databricks/f10_tabelas.sql"}
+        - task_key: decide_destination
+          depends_on: [{task_key: create_tables}]
+          notebook_task:
+            notebook_path: ../../src/arvo/rollout/notebooks/decidir_envio.py
+            base_parameters: {catalog: "${var.catalog}"}
+      tags: {project: arvo, domain: rollout, phase: F10}

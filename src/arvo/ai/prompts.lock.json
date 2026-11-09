@@ -1,0 +1,22 @@
+{
+  "agente_analista@1.0.0": {
+    "arquivo": "src/arvo/ai/prompts/agente_analista_v1.md",
+    "sha256": "caa241357dafc51e69d0122dce4ac2eb7746dc2efe31a1958703931a353b96b7"
+  },
+  "agente_analista@1.1.0": {
+    "arquivo": "src/arvo/ai/prompts/agente_analista_v1.md",
+    "sha256": "270ee7a8ebbd4526c90595439edc94323e1e2d6ebec2d8881fede020fb5e1b8b"
+  },
+  "extracao_contrato@1.0.0": {
+    "arquivo": "src/arvo/contracts/prompts/extracao_contrato_v1.md",
+    "sha256": "54506154232faa2c6894a6f15fca7c073ea8a31f2dd983854ce253c14a86a20a"
+  },
+  "juiz_extracao@1.0.0": {
+    "arquivo": "src/arvo/contracts/prompts/juiz_extracao_v1.md",
+    "sha256": "1441494618283df9c58e754404e91676d69f29f06f16c6f95a34e78688fc6608"
+  },
+  "sugerir_conceito@1.0.0": {
+    "arquivo": "src/arvo/ai/prompts/sugerir_conceito_v1.md",
+    "sha256": "6a522158a16bff27f2ceb150ea0f457281feb845033af4e26798df67c79fe1d4"
+  }
+}

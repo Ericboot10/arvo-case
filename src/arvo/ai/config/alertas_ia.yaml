@@ -1,0 +1,14 @@
+# Limites dos indicadores de sanidade de IA (plano v2, 9.4). Mesmos limites no Python (src/arvo/ai/indicadores.py)
+# e na view SQL (src/arvo/ai/databricks/v_ia_sanidade.sql). Acima/abaixo do limite: alerta com ação no runbook.
+versao: 1
+limites:
+  taxa_schema_valido:      {min: 0.98, acao: "revisar prompt/schema; rodar golden set do provedor"}
+  taxa_recusa:             {max: 0.01, acao: "ver stop_detalhe; avaliar fallback de provedor"}
+  taxa_truncamento:        {max: 0.01, acao: "aumentar max_output_tokens ou dividir a tarefa"}
+  taxa_erro:               {max: 0.05, acao: "provedor degradado: checar circuito e fallback"}
+  taxa_fallback:           {max: 0.10, acao: "primário instável: abrir incidente com o provedor"}
+  taxa_bloqueio_politica:  {max: 0.0,  acao: "BUG de configuração: tarefa tentou enviar classe de dado proibida"}
+  taxa_bloqueio_circuito:  {max: 0.0,  acao: "adapter com falhas consecutivas: investigar antes de reabrir"}
+  latencia_p95_ms:         {max: 120000, acao: "considerar tier menor ou batch"}
+  pct_param_ignorado:      {max: 1.0,  acao: "informativo: parâmetro pedido e não aceito pelo modelo"}
+drift_modelo: "modelo servido diferente do pedido ou mais de um modelo servido → rodar golden set antes de aceitar"

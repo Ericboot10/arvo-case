@@ -1,0 +1,23 @@
+# Domínio contracts · contrato como dado: extração do PDF por IA, conferência contra o texto e aprovação humana.
+resources:
+  jobs:
+    contracts_extract:
+      name: arvo-contracts-extract-${bundle.target}
+      description: "PDF do contrato → parâmetros extraídos por 2 modelos + juiz, com grounding. Exige chave de provedor (modo_ia: real)."
+      tasks:
+        - task_key: create_tables
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/executar_sql.py
+            base_parameters:
+              catalog: ${var.catalog}
+              arquivo: ../../contracts/databricks/f3_tabelas.sql
+        - task_key: extract
+          depends_on: [{task_key: create_tables}]
+          notebook_task:
+            notebook_path: ../../src/arvo/contracts/databricks/f3_executar_extracao.py
+            base_parameters:
+              catalog: ${var.catalog}
+              modo: ${var.modo_ia}
+              pdf: Contrato-parthenon-x-hospital-sao-rafael.pdf
+              secret_scope: ${var.secret_scope}
+      tags: {project: arvo, domain: contracts, phase: F3}

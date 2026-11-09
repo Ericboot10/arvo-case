@@ -1,0 +1,451 @@
+# Definições de métricas de negócio: definidas UMA vez aqui e materializadas como UC Metric Views
+# (databricks/02_metric_views.sql). Toda métrica tem: nível, pergunta que responde, dono, fórmula, grão,
+# dimensões permitidas e disponibilidade.
+#
+# nivel:
+#   norte        o indicador que define sucesso (um só)
+#   meta         o norte expresso contra a meta contratada
+#   fator        fatores multiplicativos do norte (cada um com dono e alavanca próprios)
+#   guardrail    contra-indicadores: impedem que o norte suba à custa de glosa ruim
+#   diagnostico  explicam o porquê e onde agir
+#   sanidade     confiabilidade do dado e da semântica
+#   base         volumes que compõem as demais
+# disponibilidade:
+#   hoje         calculável com dados que existem no case
+#   futura       depende de fonte nova (eventos do funil, recurso, auditoria amostral) ou de série histórica
+versao: 0.2.0
+status: rascunho_pendente_G2
+
+arvore_norte:
+  norte: M20
+  meta: M19
+  fatores: [M21, M22, M23, M24, M18]
+  identidade: "M20 = M21 × M22 × M23 × M24 × M18 (inteligências desligadas não têm valor depois da identificação)"
+  guardrails: [M05, M10, M12, M13, M25, M26]
+
+# Contrato semântico com a F5/F6: colunas que as tabelas gold DEVEM expor (testado contra src/arvo/architecture/modelo.yaml).
+tabelas_base:
+  fato_item_auditado:
+    grao: 1 linha por item de conta auditado (id_item)
+    colunas: [id_item, id_conta, id_prestador, id_beneficiario_hash, competencia, dt_atendimento,
+              carater_canonico, carater_origem, regime, cod_tuss, conceito, conceito_pai,
+              qtd, vl_unitario, vl_cobrado, tem_preco_pactuado, vl_teto_unitario, vl_excedente_potencial,
+              conta_tem_pacote, conflito_semantico, glosado, regra_principal, clausula_principal,
+              vl_glosado, versao_contrato, versao_semantica, run_id]
+  fato_apontamento:
+    grao: 1 linha por glosa (no máximo 1 por item)
+    colunas: [id_apontamento, id_item, id_conta, regra_principal, clausula_principal, clausulas_subsidiarias,
+              vl_cobrado, vl_referencia, vl_glosado, justificativa, evidencia, versao_regra, versao_contrato,
+              versao_semantica, run_id, status_envio, motivo_revisao]
+  fato_funil_economia:
+    grao: 1 linha por inteligência × competência
+    colunas: [competencia, cliente, inteligencia, tipo_inteligencia, status_inteligencia,
+              vl_identificado, vl_enviado_operadora, vl_enviado_prestador, vl_efetivado,
+              taxa_efetivacao_benchmark, vl_sinistro_processado]
+    nota: "vl_sinistro_processado é SEMIADITIVO (repete por inteligência): use MAX por competência, nunca SUM"
+  fato_glosa_ciclo:
+    grao: 1 linha por glosa, atualizada a cada marco (accumulating snapshot)
+    colunas: [id_apontamento, id_item, id_conta, id_prestador, regra_principal, inteligencia, cod_tuss,
+              versao_contrato, competencia, etapa_atual, dt_identificacao, dt_envio_operadora,
+              dt_registro_prestador, dt_recurso, dt_julgamento, dt_efetivacao, motivo_retencao, motivo_registro,
+              motivo_reversao, vl_identificado, vl_enviado_operadora, vl_registrado_prestador, vl_recorrido,
+              vl_revertido, vl_efetivado, dias_ate_envio, dias_ate_registro, dias_ate_efetivacao]
+  fato_excedente_mensal:
+    grao: 1 linha por prestador × conceito × competência (periodic snapshot)
+    colunas: [id_prestador, conceito, competencia, vl_apresentado, vl_excedente, taxa_excedente,
+              taxa_excedente_base, versao_linha_base, teve_glosa_mes_anterior, economia_preventiva_estimada]
+  fato_auditoria_amostral:
+    grao: 1 linha por item auditado na amostra (glosados e não glosados)
+    colunas: [id_item, rodada, estrato, subestrato, peso_amostral, regra_principal, agente_indevido, auditor_indevido, auditor, motivo]
+
+dimensoes:
+  - {id: competencia, descricao: Mês de referência}
+  - {id: id_prestador, descricao: Prestador}
+  - {id: carater_canonico, descricao: "Caráter de atendimento canônico (ELETIVO | URGENCIA_EMERGENCIA). NÃO é o local: Pronto Socorro é regime",
+     ref_glossario: T14, sinonimos: [caráter, natureza do atendimento, eletivo ou urgência, urgência ou emergência]}
+  - {id: regime, descricao: "Regime de atendimento (INTERNACAO | AMBULATORIAL | PRONTO_SOCORRO). Pronto Socorro não implica urgência",
+     ref_glossario: T17, sinonimos: [tipo de conta, local de atendimento, setor]}
+  - {id: conceito, descricao: Conceito de negócio do item, sinonimos: [categoria do item, classe do item]}
+  - {id: conceito_pai, descricao: Família do conceito, sinonimos: [grupo do item, tipo de item]}
+  - {id: cod_tuss, descricao: Código TUSS, sinonimos: [código do procedimento, código do item, TUSS]}
+  - {id: regra_principal, descricao: Regra que fundamenta a glosa}
+  - {id: clausula_principal, descricao: Cláusula principal}
+  - {id: conta_tem_pacote, descricao: Conta contém procedimento em pacote}
+  - {id: inteligencia, descricao: Inteligência Arvo, ref_glossario: T36}
+  - {id: tipo_inteligencia, descricao: Administrativa x Técnica, ref_glossario: T30}
+  - {id: status_inteligencia, descricao: Ligada x Desligada}
+  - {id: etapa_atual, descricao: Etapa do ciclo de vida da glosa, ref_glossario: T49}
+  - {id: motivo_retencao, descricao: Motivo da retenção pela operadora (RET-*), ref_glossario: T50}
+  - {id: motivo_registro, descricao: Motivo da perda de registro (REG-*), ref_glossario: T50}
+  - {id: motivo_reversao, descricao: Motivo da reversão em recurso (REC-*), ref_glossario: T50}
+  - {id: rodada, descricao: Rodada de auditoria amostral}
+  - {id: estrato, descricao: Estrato amostral (GLOSADO | NAO_GLOSADO)}
+
+metricas:
+  # ============================== NORTE, META E FATORES (funil agregado da Arvo, hoje) ==============================
+  - id: M20
+    nome: indice_norte
+    nivel: norte
+    definicao: Economia efetivada ÷ sinistro processado. É o que define sucesso para a Parthenon.
+    formula: SUM(vl_efetivado) / NULLIF(MAX(vl_sinistro_processado), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    meta: ">= 0.02"
+    dimensoes: [competencia]
+    pendencias: [AMB-15]
+  - id: M19
+    nome: atingimento_meta
+    nivel: meta
+    definicao: Economia efetivada ÷ meta (2% do sinistro processado do mês).
+    formula: SUM(vl_efetivado) / NULLIF(0.02 * MAX(vl_sinistro_processado), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    meta: ">= 1.0"
+    dimensoes: [competencia]
+    pendencias: [AMB-06, AMB-15]
+  - id: M21
+    nome: taxa_identificacao
+    nivel: fator
+    definicao: Economia identificada ÷ sinistro processado. Alavanca da Arvo (novas regras, cobertura).
+    formula: SUM(vl_identificado) / NULLIF(MAX(vl_sinistro_processado), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia]
+  - id: M22
+    nome: taxa_ativacao
+    nivel: fator
+    definicao: Identificado em inteligências LIGADAS ÷ identificado total. Alavanca conjunta (ligar desligadas).
+    formula: SUM(CASE WHEN status_inteligencia = 'Ligada' THEN vl_identificado END) / NULLIF(SUM(vl_identificado), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, tipo_inteligencia]
+  - id: M23
+    nome: taxa_envio
+    nivel: fator
+    definicao: Enviado à operadora ÷ identificado, só ligadas. Alavanca da auditoria médica (Dr. Ary).
+    formula: SUM(CASE WHEN status_inteligencia = 'Ligada' THEN vl_enviado_operadora END) / NULLIF(SUM(CASE WHEN status_inteligencia = 'Ligada' THEN vl_identificado END), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia]
+  - id: M24
+    nome: taxa_registro
+    nivel: fator
+    definicao: Registrado no prestador ÷ enviado à operadora. Alavanca de integração (Alana, TI).
+    formula: SUM(vl_enviado_prestador) / NULLIF(SUM(vl_enviado_operadora), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia]
+  - id: M18
+    nome: taxa_efetivacao
+    nivel: fator
+    definicao: Efetivado ÷ registrado no prestador (comparar com taxa_efetivacao_benchmark). Alavanca de defensabilidade.
+    formula: SUM(vl_efetivado) / NULLIF(SUM(vl_enviado_prestador), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: juridico
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia]
+
+  # ============================== BASE (volumes) ==============================
+  - id: M14
+    nome: economia_efetivada
+    nivel: base
+    definicao: Soma da economia efetivada (numerador do norte).
+    formula: SUM(vl_efetivado)
+    tabela: fato_funil_economia
+    unidade: BRL
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia, status_inteligencia]
+  - id: M15
+    nome: economia_identificada
+    nivel: base
+    definicao: Soma da economia identificada. É insumo, não meta (já passa de 2% e não paga nada sozinha).
+    formula: SUM(vl_identificado)
+    tabela: fato_funil_economia
+    unidade: BRL
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia, status_inteligencia]
+  - id: M01
+    nome: valor_apresentado
+    nivel: base
+    definicao: Soma do valor cobrado pelo prestador.
+    formula: SUM(vl_cobrado)
+    tabela: fato_item_auditado
+    unidade: BRL
+    dono: analytics_engineer
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, carater_canonico, regime, conceito, conceito_pai, cod_tuss, conta_tem_pacote]
+  - id: M02
+    nome: valor_glosado
+    nivel: base
+    definicao: Soma do valor glosado pelo agente (identificado, ainda não efetivado).
+    formula: SUM(vl_glosado)
+    tabela: fato_item_auditado
+    unidade: BRL
+    dono: analytics_engineer
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, carater_canonico, regime, conceito, conceito_pai, cod_tuss, regra_principal, clausula_principal, conta_tem_pacote]
+  - id: M04
+    nome: itens_glosados
+    nivel: base
+    definicao: Quantidade de itens com glosa.
+    formula: COUNT_IF(glosado)
+    tabela: fato_item_auditado
+    unidade: itens
+    dono: analytics_engineer
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, regime, conceito, conceito_pai, cod_tuss, regra_principal, clausula_principal, conta_tem_pacote]
+
+  # ============================== GUARDRAILS ==============================
+  - id: M05
+    nome: pct_contas_com_glosa
+    nivel: guardrail
+    definicao: Contas com ao menos um item glosado ÷ contas auditadas. Atrito com o prestador.
+    formula: COUNT(DISTINCT CASE WHEN glosado THEN id_conta END) / NULLIF(COUNT(DISTINCT id_conta), 0)
+    tabela: fato_item_auditado
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    alerta: "fora da banda histórica (±3σ) do prestador"
+    dimensoes: [competencia, id_prestador, regime, carater_canonico]
+  - id: M26
+    nome: violacoes_invariantes
+    nivel: guardrail
+    definicao: Apontamentos sem cláusula, sem evidência, com glosa ≤ 0 ou maior que o cobrado. Deve ser 0 (bloqueia o envio).
+    formula: COUNT_IF(clausula_principal IS NULL OR size(evidencia) = 0 OR vl_glosado <= 0 OR vl_glosado > vl_cobrado)
+    tabela: fato_apontamento
+    unidade: apontamentos
+    dono: juridico
+    disponibilidade: hoje
+    alerta: "> 0"
+    dimensoes: [regra_principal]
+  - id: M10
+    nome: precisao_auditada
+    nivel: guardrail
+    definicao: Glosas confirmadas pelo auditor ÷ glosas auditadas, PONDERADO pelo peso amostral (Horvitz–Thompson, F8). Sempre com IC. Difere da precisão da amostra do gabarito (ops.v_precisao_recall), que não é ponderada.
+    formula: SUM(CASE WHEN estrato = 'GLOSADO' AND auditor_indevido THEN peso_amostral END) / NULLIF(SUM(CASE WHEN estrato = 'GLOSADO' THEN peso_amostral END), 0)
+    tabela: fato_auditoria_amostral
+    unidade: percentual
+    dono: cientista_dados
+    disponibilidade: hoje
+    alerta: "limite inferior do IC 95% < 0.95"
+    dimensoes: [rodada, regra_principal]
+  - id: M25
+    nome: taxa_indevido_nao_detectado
+    nivel: guardrail
+    definicao: Itens NÃO glosados que o auditor considera indevidos ÷ não glosados, PONDERADO pelo peso amostral (F8). Entra na estimativa do recall populacional, mas NÃO é 1 − recall (recall = indevidos glosados ÷ todos os indevidos, em ops.v_precisao_recall).
+    formula: SUM(CASE WHEN estrato = 'NAO_GLOSADO' AND auditor_indevido THEN peso_amostral END) / NULLIF(SUM(CASE WHEN estrato = 'NAO_GLOSADO' THEN peso_amostral END), 0)
+    tabela: fato_auditoria_amostral
+    unidade: percentual
+    dono: cientista_dados
+    disponibilidade: hoje
+    alerta: "tendência de alta por 2 rodadas"
+    dimensoes: [rodada]
+  - id: M12
+    nome: taxa_recurso
+    nivel: guardrail
+    definicao: Glosas recorridas ÷ glosas registradas no prestador.
+    formula: COUNT_IF(dt_recurso IS NOT NULL) / NULLIF(COUNT_IF(dt_registro_prestador IS NOT NULL), 0)
+    tabela: fato_glosa_ciclo
+    unidade: percentual
+    dono: juridico
+    disponibilidade: futura
+    alerta: "acima do benchmark da regra"
+    dimensoes: [competencia, id_prestador, regra_principal, inteligencia]
+  - id: M13
+    nome: taxa_reversao
+    nivel: guardrail
+    definicao: Recursos procedentes ÷ recursos julgados. É a precisão real em campo.
+    formula: COUNT_IF(vl_revertido > 0) / NULLIF(COUNT_IF(dt_julgamento IS NOT NULL), 0)
+    tabela: fato_glosa_ciclo
+    unidade: percentual
+    dono: juridico
+    disponibilidade: futura
+    alerta: "> 0.05"
+    dimensoes: [competencia, regra_principal, motivo_reversao]
+
+  # ============================== DIAGNÓSTICO ==============================
+  - id: M16
+    nome: taxa_retencao_operadora
+    nivel: diagnostico
+    complemento_de: M23
+    definicao: (Identificado − enviado à operadora) ÷ identificado, só ligadas. É 1 − M23.
+    formula: SUM(CASE WHEN status_inteligencia = 'Ligada' THEN vl_identificado - vl_enviado_operadora END) / NULLIF(SUM(CASE WHEN status_inteligencia = 'Ligada' THEN vl_identificado END), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia]
+  - id: M17
+    nome: taxa_perda_registro
+    nivel: diagnostico
+    complemento_de: M24
+    definicao: (Enviado à operadora − registrado no prestador) ÷ enviado. É 1 − M24.
+    formula: SUM(vl_enviado_operadora - vl_enviado_prestador) / NULLIF(SUM(vl_enviado_operadora), 0)
+    tabela: fato_funil_economia
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: hoje
+    dimensoes: [competencia, inteligencia, tipo_inteligencia]
+  - id: M03
+    nome: taxa_glosa
+    nivel: diagnostico
+    definicao: Valor glosado ÷ valor apresentado. Plausibilidade (banda esperada por prestador/regra). NÃO fatiar por cláusula.
+    formula: SUM(vl_glosado) / NULLIF(SUM(vl_cobrado), 0)
+    tabela: fato_item_auditado
+    unidade: percentual
+    dono: analytics_engineer
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, regime, conceito, conceito_pai, regra_principal]
+  - id: M06
+    nome: gap_cobrado_vs_pactuado
+    nivel: diagnostico
+    definicao: >
+      Soma do excedente sobre o teto em TODOS os itens com preço pactuado, glosados ou não.
+      Responde "qual procedimento tem maior gap em relação ao contrato".
+    formula: SUM(vl_excedente_potencial)
+    tabela: fato_item_auditado
+    unidade: BRL
+    dono: especialista_contas_medicas
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, conceito, conceito_pai, cod_tuss, regime]
+  - id: M07
+    nome: cobertura_preco_pactuado
+    nivel: diagnostico
+    definicao: Itens com preço pactuado ÷ itens apresentados. Quanto do sinistro é auditável por preço (Cl. 2.3).
+    formula: COUNT_IF(tem_preco_pactuado) / NULLIF(COUNT(1), 0)
+    tabela: fato_item_auditado
+    unidade: percentual
+    dono: especialista_contas_medicas
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, conceito_pai]
+  - id: M27
+    nome: recorrencia_meses
+    nivel: diagnostico
+    definicao: Em quantos meses o mesmo padrão (prestador × conceito × cláusula) gerou glosa. Recorrente vira pauta de renegociação.
+    formula: COUNT(DISTINCT CASE WHEN glosado THEN competencia END)
+    tabela: fato_item_auditado
+    unidade: meses
+    dono: especialista_contas_medicas
+    disponibilidade: hoje
+    dimensoes: [id_prestador, conceito, clausula_principal, regra_principal]
+  - id: M30
+    nome: taxa_excedente
+    nivel: diagnostico
+    definicao: Excedente sobre o teto ÷ valor apresentado, por prestador × conceito × mês (base da economia preventiva).
+    formula: SUM(vl_excedente) / NULLIF(SUM(vl_apresentado), 0)
+    tabela: fato_excedente_mensal
+    unidade: percentual
+    dono: especialista_contas_medicas
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, conceito]
+  - id: M28
+    nome: reincidencia_pos_glosa
+    nivel: diagnostico
+    definicao: Entre os pares prestador × conceito glosados no mês anterior, a fração que voltou a cobrar acima do teto.
+    formula: AVG(CASE WHEN teve_glosa_mes_anterior THEN CAST(vl_excedente > 0 AS INT) END)
+    tabela: fato_excedente_mensal
+    unidade: percentual
+    dono: especialista_contas_medicas
+    disponibilidade: futura
+    dimensoes: [competencia, id_prestador, conceito]
+  - id: M29
+    nome: economia_preventiva
+    nivel: diagnostico
+    definicao: Valor que deixou de ser cobrado indevidamente pela mudança de comportamento do prestador, contra a linha de base.
+    formula: SUM(economia_preventiva_estimada)
+    tabela: fato_excedente_mensal
+    unidade: BRL
+    dono: cientista_dados
+    disponibilidade: futura
+    dimensoes: [competencia, id_prestador, conceito]
+    pendencias: [AMB-16]
+  - id: M34
+    nome: conversao_glosa_a_glosa
+    nivel: diagnostico
+    definicao: Efetivado ÷ identificado calculado glosa a glosa (o funil aberto por regra e prestador).
+    formula: SUM(vl_efetivado) / NULLIF(SUM(vl_identificado), 0)
+    tabela: fato_glosa_ciclo
+    unidade: percentual
+    dono: pm_cs
+    disponibilidade: futura
+    dimensoes: [competencia, id_prestador, regra_principal, inteligencia]
+  - id: M33
+    nome: retencao_por_motivo
+    nivel: diagnostico
+    definicao: Valor retido pela operadora, por motivo. Ataca o gargalo da auditoria médica com dado.
+    formula: SUM(CASE WHEN etapa_atual = 'RETIDA_OPERADORA' THEN vl_identificado END)
+    tabela: fato_glosa_ciclo
+    unidade: BRL
+    dono: auditor_medico
+    disponibilidade: futura
+    dimensoes: [motivo_retencao, regra_principal, inteligencia]
+    pendencias: [AMB-19]
+  - id: M35
+    nome: perda_registro_por_motivo
+    nivel: diagnostico
+    definicao: Valor enviado e não registrado no prestador, por motivo (integração, rejeição, prazo).
+    formula: SUM(vl_enviado_operadora - vl_registrado_prestador)
+    tabela: fato_glosa_ciclo
+    unidade: BRL
+    dono: pm_cs
+    disponibilidade: futura
+    dimensoes: [motivo_registro, regra_principal]
+    pendencias: [AMB-18]
+  - id: M31
+    nome: tempo_ate_efetivacao
+    nivel: diagnostico
+    definicao: Dias médios entre a identificação e a efetivação (onde a glosa fica parada).
+    formula: AVG(dias_ate_efetivacao)
+    tabela: fato_glosa_ciclo
+    unidade: dias
+    dono: pm_cs
+    disponibilidade: futura
+    dimensoes: [competencia, regra_principal, inteligencia]
+  - id: M32
+    nome: valor_em_risco
+    nivel: diagnostico
+    definicao: Valor glosado atualmente em recurso (pode ser revertido).
+    formula: SUM(CASE WHEN etapa_atual = 'EM_RECURSO' THEN vl_recorrido END)
+    tabela: fato_glosa_ciclo
+    unidade: BRL
+    dono: juridico
+    disponibilidade: futura
+    dimensoes: [id_prestador, regra_principal]
+
+  # ============================== SANIDADE ==============================
+  - id: M08
+    nome: aderencia_semantica
+    nivel: sanidade
+    definicao: Itens com código mapeado a conceito aprovado ÷ itens apresentados. Meta 100%.
+    formula: COUNT_IF(conceito IS NOT NULL) / NULLIF(COUNT(1), 0)
+    tabela: fato_item_auditado
+    unidade: percentual
+    dono: analytics_engineer
+    disponibilidade: hoje
+    meta: "= 1.0"
+    dimensoes: [competencia, id_prestador]
+  - id: M09
+    nome: taxa_conflito_semantico
+    nivel: sanidade
+    definicao: Itens com conflito semântico (p. ex. regime PRONTO_SOCORRO com caráter ELETIVO) ÷ todos os itens. A condição já está no numerador; filtrar por regime ou caráter muda o denominador (o filtro pela própria condição dá 100%).
+    formula: COUNT_IF(conflito_semantico) / NULLIF(COUNT(1), 0)
+    tabela: fato_item_auditado
+    unidade: percentual
+    dono: especialista_contas_medicas
+    disponibilidade: hoje
+    dimensoes: [competencia, id_prestador, regime, carater_canonico]

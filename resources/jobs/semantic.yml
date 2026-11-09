@@ -1,0 +1,14 @@
+# Domínio semantic · camada semântica (glossário, mapa TUSS, domínios, contrato transcrito) como tabelas.
+resources:
+  jobs:
+    semantic_load:
+      name: arvo-semantic-load-${bundle.target}
+      description: "Carrega a camada semântica em <catalog>.semantic. As metric views são criadas pelo monitoring_refresh (dependem do gold)."
+      tasks:
+        - task_key: load_semantic_layer
+          notebook_task:
+            notebook_path: ../../src/arvo/semantic/databricks/01_carregar_semantica.py
+            base_parameters:
+              catalog: ${var.catalog}
+              semantic_dir: ".."
+      tags: {project: arvo, domain: semantic, phase: F2}

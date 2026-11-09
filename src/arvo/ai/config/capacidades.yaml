@@ -1,0 +1,51 @@
+# Matriz de capacidades por provedor (structured outputs, amostragem, cache, batch), COMO DADO.
+# Fonte: documentação oficial consultada em 06/11/2026 (docs/plan.md §7.3 e §14). Revalidar a cada release.
+# Usada pelo linter de schemas (src/arvo/ai/capacidades.py): nenhum schema pode usar palavra que algum provedor da cadeia
+# rejeita (400) ou IGNORA em silêncio (a restrição deixaria de valer sem aviso).
+versao: 1
+consultado_em: "2026-11-06"
+
+provedores:
+  anthropic:
+    structured_output: "output_config.format = {type: json_schema, schema}  (output_format depreciado)"
+    rejeita: [minimum, maximum, exclusiveMinimum, exclusiveMaximum, minLength, maxLength]
+    ignora: []
+    exige_additional_properties_false: true
+    exige_todos_required: false
+    max_chaves: null
+    amostragem: "temperature/top_p/top_k removidos (400) nos modelos atuais; usar output_config.effort"
+    citations_com_structured_output: false
+    batch: "Message Batches (sem server-side fallbacks)"
+    cache: "cache_control em blocos; leitura em usage.cache_read_input_tokens"
+  openai:
+    structured_output: "text.format = {type: json_schema, name, schema, strict: true}"
+    rejeita: [allOf, not, if, then, else, dependentRequired]
+    ignora: []
+    exige_additional_properties_false: true
+    exige_todos_required: true
+    max_chaves: null
+    amostragem: "modelos de raciocínio usam reasoning.effort; temperature conforme o modelo"
+    batch: "Batch API (24h, junção por custom_id)"
+    cache: "automático por prefixo; usage.input_tokens_details.cached_tokens"
+  google:
+    structured_output: "response_format com mime_type application/json e schema"
+    rejeita: []
+    ignora: [minLength, maxLength, uniqueItems, minProperties, maxProperties, contains]
+    exige_additional_properties_false: false
+    exige_todos_required: false
+    max_chaves: null
+    cache: "implícito (mínimo de tokens por modelo)"
+  databricks_gateway:
+    structured_output: "response_format = {type: json_schema, json_schema: {name, schema, strict: true}}"
+    rejeita: [pattern, anyOf, oneOf, allOf, prefixItems, $ref]
+    ignora: [minLength, maxLength, minItems, maxItems]      # "length and size constraints are not enforced"
+    exige_additional_properties_false: false
+    exige_todos_required: false
+    max_chaves: 64
+    observacao: "databricks-claude-*-5-5 retornam 400 com response_format em Chat Completions (usar Messages API)"
+  simulado:
+    rejeita: []
+    ignora: []
+    exige_additional_properties_false: false
+    exige_todos_required: false
+    max_chaves: null

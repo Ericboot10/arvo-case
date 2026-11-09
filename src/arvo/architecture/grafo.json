@@ -1,0 +1,2001 @@
+{
+  "versao_modelo": 1,
+  "nos": [
+    {
+      "id": "fonte.sinistro_csv",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "implementado",
+      "fase": null,
+      "grao": null,
+      "lgpd": [
+        "id_beneficiario"
+      ]
+    },
+    {
+      "id": "fonte.contrato_pdf",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "implementado",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "fonte.planilha_inteligencias",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "implementado",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "fonte.semantica_git",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "implementado",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "fonte.recursos_prestador",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "futuro",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "fonte.eventos_funil_operadora",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "futuro",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "fonte.gabarito_auditoria",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "implementado",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "fonte.auditoria_amostral",
+      "no": "tabela",
+      "camada": "fonte",
+      "tipo": "fonte",
+      "status": "futuro",
+      "fase": null,
+      "grao": null,
+      "lgpd": []
+    },
+    {
+      "id": "bronze.sinistro_raw",
+      "no": "tabela",
+      "camada": "bronze",
+      "tipo": "raw",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por linha recebida no arquivo (sem deduplicar)",
+      "lgpd": [
+        "id_beneficiario"
+      ]
+    },
+    {
+      "id": "bronze.gabarito_raw",
+      "no": "tabela",
+      "camada": "bronze",
+      "tipo": "raw",
+      "status": "implementado",
+      "fase": "F8",
+      "grao": "1 linha por item rotulado no gabarito do case (sobrescrita a cada carga)",
+      "lgpd": []
+    },
+    {
+      "id": "bronze.inteligencias_raw",
+      "no": "tabela",
+      "camada": "bronze",
+      "tipo": "raw",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por inteligência por arquivo recebido",
+      "lgpd": []
+    },
+    {
+      "id": "quarantine.item_conta_rejeitado",
+      "no": "tabela",
+      "camada": "quarantine",
+      "tipo": "quarentena",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por linha de bronze reprovada em expectation de severidade quarentena/fail",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.map_tuss_conceito",
+      "no": "tabela",
+      "camada": "semantic",
+      "tipo": "semantica",
+      "status": "implementado",
+      "fase": "F2",
+      "grao": "1 linha por código TUSS",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.dim_dominio_valor",
+      "no": "tabela",
+      "camada": "semantic",
+      "tipo": "semantica",
+      "status": "implementado",
+      "fase": "F2",
+      "grao": "1 linha por domínio × valor de origem",
+      "lgpd": []
+    },
+    {
+      "id": "contracts.contract_params",
+      "no": "tabela",
+      "camada": "contracts",
+      "tipo": "contrato",
+      "status": "implementado",
+      "fase": "F3",
+      "grao": "1 linha por versão aprovada de contrato",
+      "lgpd": []
+    },
+    {
+      "id": "silver.item_conta",
+      "no": "tabela",
+      "camada": "silver",
+      "tipo": "conformada",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por item de conta válido (id_item único)",
+      "lgpd": []
+    },
+    {
+      "id": "silver.conta",
+      "no": "tabela",
+      "camada": "silver",
+      "tipo": "conformada",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por conta",
+      "lgpd": []
+    },
+    {
+      "id": "silver.atendimento",
+      "no": "tabela",
+      "camada": "silver",
+      "tipo": "conformada",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por beneficiário × dia (conceito derivado T11)",
+      "lgpd": []
+    },
+    {
+      "id": "silver.funil_inteligencia",
+      "no": "tabela",
+      "camada": "silver",
+      "tipo": "conformada",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por inteligência × competência",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_data",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por dia do calendário",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_prestador",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por prestador",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_item_tuss",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por código TUSS (dimensão conformada; vem da semântica)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_perfil_atendimento",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por combinação caráter × regime (junk dimension)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_contrato",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por versão de contrato (histórico preservado)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_item_contratado",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por versão de contrato × código (teto e papéis contratuais)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_regra",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F6",
+      "grao": "1 linha por regra × versão",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_inteligencia",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por inteligência Arvo",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_item",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_transacao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por item de conta (antes do motor de regras)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_item_auditado",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_transacao",
+      "status": "implementado",
+      "fase": "F6",
+      "grao": "1 linha por item de conta, com o resultado do motor de regras",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_apontamento",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_transacao",
+      "status": "implementado",
+      "fase": "F6",
+      "grao": "1 linha por glosa (no máximo 1 por item)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_funil_economia",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_snapshot_periodico",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por inteligência × competência (foto mensal do funil)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_glosa_ciclo",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_snapshot_acumulado",
+      "status": "futuro",
+      "fase": "F10",
+      "grao": "1 linha por glosa, atualizada a cada marco do ciclo de vida (identificada → efetivada)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_excedente_mensal",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_snapshot_periodico",
+      "status": "especificado",
+      "fase": "F9",
+      "grao": "1 linha por prestador × conceito × competência",
+      "lgpd": []
+    },
+    {
+      "id": "gold.fato_auditoria_amostral",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "fato_transacao",
+      "status": "implementado",
+      "fase": "F8",
+      "grao": "1 linha por item auditado na amostra estratificada (glosados e NÃO glosados), com peso amostral (F8). Hoje: rodada R0 = gabarito do case",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_etapa_funil",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "especificado",
+      "fase": "F10",
+      "grao": "1 linha por etapa do ciclo de vida da glosa",
+      "lgpd": []
+    },
+    {
+      "id": "gold.dim_motivo",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "especificado",
+      "fase": "F10",
+      "grao": "1 linha por motivo (RET-*, REG-*, REC-*); dimensão com papéis (retenção, registro, reversão)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.ponte_regra_inteligencia",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "ponte",
+      "status": "implementado",
+      "fase": "F6",
+      "grao": "1 linha por regra contratual × inteligência Arvo",
+      "lgpd": []
+    },
+    {
+      "id": "gold.ref_linha_base_excedente",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "dimensao",
+      "status": "especificado",
+      "fase": "F9",
+      "grao": "1 linha por prestador × conceito × versão da linha de base (congelada e aprovada)",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.mv_auditoria_glosa",
+      "no": "tabela",
+      "camada": "metric",
+      "tipo": "metric_view",
+      "status": "especificado",
+      "fase": "F2",
+      "grao": "auditoria contratual (M01–M09, M27)",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.mv_funil_economia",
+      "no": "tabela",
+      "camada": "metric",
+      "tipo": "metric_view",
+      "status": "especificado",
+      "fase": "F2",
+      "grao": "norte, meta e fatores (M14–M24) sobre o funil agregado",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.mv_apontamento",
+      "no": "tabela",
+      "camada": "metric",
+      "tipo": "metric_view",
+      "status": "especificado",
+      "fase": "F6",
+      "grao": "invariantes dos apontamentos (M26)",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.mv_glosa_ciclo",
+      "no": "tabela",
+      "camada": "metric",
+      "tipo": "metric_view",
+      "status": "futuro",
+      "fase": "F10",
+      "grao": "funil glosa a glosa, recurso, reversão, motivos e tempo de ciclo (M12, M13, M31–M35)",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.mv_excedente_mensal",
+      "no": "tabela",
+      "camada": "metric",
+      "tipo": "metric_view",
+      "status": "especificado",
+      "fase": "F9",
+      "grao": "taxa de excedente, reincidência e economia preventiva (M28–M30)",
+      "lgpd": []
+    },
+    {
+      "id": "semantic.mv_qualidade_auditoria",
+      "no": "tabela",
+      "camada": "metric",
+      "tipo": "metric_view",
+      "status": "implementado",
+      "fase": "F8",
+      "grao": "precisão auditada e indevido não detectado (M10, M25)",
+      "lgpd": []
+    },
+    {
+      "id": "ops.dq_resultados",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "implementado",
+      "fase": "F5",
+      "grao": "1 linha por run × expectation",
+      "lgpd": []
+    },
+    {
+      "id": "ops.llm_calls",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "implementado",
+      "fase": "F3",
+      "grao": "1 linha por chamada de IA",
+      "lgpd": []
+    },
+    {
+      "id": "ops.v_ia_sanidade",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "implementado",
+      "fase": "F7",
+      "grao": "1 linha por dia × tarefa × adapter (indicadores de sanidade de IA; src/arvo/ai/databricks/v_ia_sanidade.sql)",
+      "lgpd": []
+    },
+    {
+      "id": "gold.v_avaliacao_gabarito",
+      "no": "tabela",
+      "camada": "gold",
+      "tipo": "conformada",
+      "status": "implementado",
+      "fase": "F8",
+      "grao": "1 linha por item do sinistro: decisão do motor (pred), rótulo do gabarito (real) e resultado TP/FP/FN/TN",
+      "lgpd": []
+    },
+    {
+      "id": "ops.v_precisao_recall",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "implementado",
+      "fase": "F8",
+      "grao": "1 linha por recorte (total e por regra): precisão e recall contra o gabarito, IC 95% de Wilson",
+      "lgpd": []
+    },
+    {
+      "id": "ops.v_sanidade_status",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "implementado",
+      "fase": "F9",
+      "grao": "1 linha por indicador de sanidade × recorte, com banda, status, dono e runbook (src/arvo/monitoring/indicadores.yaml)",
+      "lgpd": []
+    },
+    {
+      "id": "ops.ia_aceite_golden",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "especificado",
+      "fase": "F7",
+      "grao": "1 linha por extrator × variante do golden set (aceite de provedor, Gate G7)",
+      "lgpd": []
+    },
+    {
+      "id": "ops.ia_sugestoes_conceito",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "especificado",
+      "fase": "F7",
+      "grao": "1 linha por código TUSS novo sugerido (fila do Especialista; nunca escreve no mapa sem aprovação)",
+      "lgpd": []
+    },
+    {
+      "id": "ops.avaliacao_resultados",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "especificado",
+      "fase": "F8",
+      "grao": "1 linha por avaliação × métrica × recorte (amostra, população, regra, cenário), com IC 95%",
+      "lgpd": []
+    },
+    {
+      "id": "gold_shadow.fato_apontamento",
+      "no": "tabela",
+      "camada": "gold_shadow",
+      "tipo": "fato_transacao",
+      "status": "especificado",
+      "fase": "F10",
+      "grao": "1 linha por apontamento de regra em SHADOW (mesmo grão de gold.fato_apontamento), nunca enviado ao cliente",
+      "lgpd": []
+    },
+    {
+      "id": "ops.rollout_estado_regra",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "especificado",
+      "fase": "F10",
+      "grao": "1 linha por regra × período de vigência de um estágio (SCD2 de src/arvo/rollout/estado_regras.yaml)",
+      "lgpd": []
+    },
+    {
+      "id": "ops.rollout_destino",
+      "no": "tabela",
+      "camada": "ops",
+      "tipo": "operacao",
+      "status": "especificado",
+      "fase": "F10",
+      "grao": "1 linha por apontamento × run: estágio da regra, teto de valor, destino de envio e motivo (src/arvo/rollout/envio.py)",
+      "lgpd": []
+    },
+    {
+      "id": "metrica.M20",
+      "no": "metrica",
+      "nome": "indice_norte",
+      "nivel": "norte",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M19",
+      "no": "metrica",
+      "nome": "atingimento_meta",
+      "nivel": "meta",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M21",
+      "no": "metrica",
+      "nome": "taxa_identificacao",
+      "nivel": "fator",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M22",
+      "no": "metrica",
+      "nome": "taxa_ativacao",
+      "nivel": "fator",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M23",
+      "no": "metrica",
+      "nome": "taxa_envio",
+      "nivel": "fator",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M24",
+      "no": "metrica",
+      "nome": "taxa_registro",
+      "nivel": "fator",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M18",
+      "no": "metrica",
+      "nome": "taxa_efetivacao",
+      "nivel": "fator",
+      "disponibilidade": "hoje",
+      "dono": "juridico"
+    },
+    {
+      "id": "metrica.M14",
+      "no": "metrica",
+      "nome": "economia_efetivada",
+      "nivel": "base",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M15",
+      "no": "metrica",
+      "nome": "economia_identificada",
+      "nivel": "base",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M01",
+      "no": "metrica",
+      "nome": "valor_apresentado",
+      "nivel": "base",
+      "disponibilidade": "hoje",
+      "dono": "analytics_engineer"
+    },
+    {
+      "id": "metrica.M02",
+      "no": "metrica",
+      "nome": "valor_glosado",
+      "nivel": "base",
+      "disponibilidade": "hoje",
+      "dono": "analytics_engineer"
+    },
+    {
+      "id": "metrica.M04",
+      "no": "metrica",
+      "nome": "itens_glosados",
+      "nivel": "base",
+      "disponibilidade": "hoje",
+      "dono": "analytics_engineer"
+    },
+    {
+      "id": "metrica.M05",
+      "no": "metrica",
+      "nome": "pct_contas_com_glosa",
+      "nivel": "guardrail",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M26",
+      "no": "metrica",
+      "nome": "violacoes_invariantes",
+      "nivel": "guardrail",
+      "disponibilidade": "hoje",
+      "dono": "juridico"
+    },
+    {
+      "id": "metrica.M10",
+      "no": "metrica",
+      "nome": "precisao_auditada",
+      "nivel": "guardrail",
+      "disponibilidade": "hoje",
+      "dono": "cientista_dados"
+    },
+    {
+      "id": "metrica.M25",
+      "no": "metrica",
+      "nome": "taxa_indevido_nao_detectado",
+      "nivel": "guardrail",
+      "disponibilidade": "hoje",
+      "dono": "cientista_dados"
+    },
+    {
+      "id": "metrica.M12",
+      "no": "metrica",
+      "nome": "taxa_recurso",
+      "nivel": "guardrail",
+      "disponibilidade": "futura",
+      "dono": "juridico"
+    },
+    {
+      "id": "metrica.M13",
+      "no": "metrica",
+      "nome": "taxa_reversao",
+      "nivel": "guardrail",
+      "disponibilidade": "futura",
+      "dono": "juridico"
+    },
+    {
+      "id": "metrica.M16",
+      "no": "metrica",
+      "nome": "taxa_retencao_operadora",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M17",
+      "no": "metrica",
+      "nome": "taxa_perda_registro",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M03",
+      "no": "metrica",
+      "nome": "taxa_glosa",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "analytics_engineer"
+    },
+    {
+      "id": "metrica.M06",
+      "no": "metrica",
+      "nome": "gap_cobrado_vs_pactuado",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "especialista_contas_medicas"
+    },
+    {
+      "id": "metrica.M07",
+      "no": "metrica",
+      "nome": "cobertura_preco_pactuado",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "especialista_contas_medicas"
+    },
+    {
+      "id": "metrica.M27",
+      "no": "metrica",
+      "nome": "recorrencia_meses",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "especialista_contas_medicas"
+    },
+    {
+      "id": "metrica.M30",
+      "no": "metrica",
+      "nome": "taxa_excedente",
+      "nivel": "diagnostico",
+      "disponibilidade": "hoje",
+      "dono": "especialista_contas_medicas"
+    },
+    {
+      "id": "metrica.M28",
+      "no": "metrica",
+      "nome": "reincidencia_pos_glosa",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "especialista_contas_medicas"
+    },
+    {
+      "id": "metrica.M29",
+      "no": "metrica",
+      "nome": "economia_preventiva",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "cientista_dados"
+    },
+    {
+      "id": "metrica.M34",
+      "no": "metrica",
+      "nome": "conversao_glosa_a_glosa",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M33",
+      "no": "metrica",
+      "nome": "retencao_por_motivo",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "auditor_medico"
+    },
+    {
+      "id": "metrica.M35",
+      "no": "metrica",
+      "nome": "perda_registro_por_motivo",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M31",
+      "no": "metrica",
+      "nome": "tempo_ate_efetivacao",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "pm_cs"
+    },
+    {
+      "id": "metrica.M32",
+      "no": "metrica",
+      "nome": "valor_em_risco",
+      "nivel": "diagnostico",
+      "disponibilidade": "futura",
+      "dono": "juridico"
+    },
+    {
+      "id": "metrica.M08",
+      "no": "metrica",
+      "nome": "aderencia_semantica",
+      "nivel": "sanidade",
+      "disponibilidade": "hoje",
+      "dono": "analytics_engineer"
+    },
+    {
+      "id": "metrica.M09",
+      "no": "metrica",
+      "nome": "taxa_conflito_semantico",
+      "nivel": "sanidade",
+      "disponibilidade": "hoje",
+      "dono": "especialista_contas_medicas"
+    },
+    {
+      "id": "pergunta.Q01",
+      "no": "pergunta",
+      "texto": "Quanto foi cobrado acima do contrato no mês, por cláusula?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q02",
+      "no": "pergunta",
+      "texto": "Em quais procedimentos cirúrgicos há cobrança apartada de itens inclusos no pacote, e quanto?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q03",
+      "no": "pergunta",
+      "texto": "Qual procedimento/item tem o maior gap entre o valor cobrado e o pactuado?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q04",
+      "no": "pergunta",
+      "texto": "Quanto da economia identificada se perde entre a operadora e o prestador (perda de registro)?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q05",
+      "no": "pergunta",
+      "texto": "Quais inteligências técnicas estão sendo mais retidas pela operadora?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q06",
+      "no": "pergunta",
+      "texto": "Quanto falta para a meta de 2% no mês?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q10",
+      "no": "pergunta",
+      "texto": "Qual a economia efetivada por inteligência e tipo?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q07",
+      "no": "pergunta",
+      "texto": "Qual regra tem a maior taxa de recurso e de reversão?",
+      "disponibilidade": "futura"
+    },
+    {
+      "id": "pergunta.Q08",
+      "no": "pergunta",
+      "texto": "Quanto do sinistro tem conflito semântico (p. ex. Pronto Socorro com caráter Eletivo) e onde?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q09",
+      "no": "pergunta",
+      "texto": "Que fração das contas do prestador recebe glosa (risco de atrito)?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q11",
+      "no": "pergunta",
+      "texto": "Qual o indicador-norte do mês e qual fator (identificação, ativação, envio, registro, efetivação) mais limita?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "pergunta.Q12",
+      "no": "pergunta",
+      "texto": "Por que motivo a auditoria retém glosas, e em quais regras e inteligências?",
+      "disponibilidade": "futura"
+    },
+    {
+      "id": "pergunta.Q13",
+      "no": "pergunta",
+      "texto": "Quanto está em recurso agora, e qual a taxa de reversão por motivo?",
+      "disponibilidade": "futura"
+    },
+    {
+      "id": "pergunta.Q14",
+      "no": "pergunta",
+      "texto": "O prestador está aprendendo? Quanto deixou de ser cobrado indevidamente (economia preventiva)?",
+      "disponibilidade": "futura"
+    },
+    {
+      "id": "pergunta.Q15",
+      "no": "pergunta",
+      "texto": "Por que motivo as glosas enviadas não chegam registradas ao prestador?",
+      "disponibilidade": "futura"
+    },
+    {
+      "id": "pergunta.Q16",
+      "no": "pergunta",
+      "texto": "Qual a precisão auditada e a taxa de indevido não detectado na última rodada amostral?",
+      "disponibilidade": "futura"
+    },
+    {
+      "id": "pergunta.Q17",
+      "no": "pergunta",
+      "texto": "Quais padrões de cobrança (prestador × conceito × cláusula) se repetem mês a mês?",
+      "disponibilidade": "hoje"
+    },
+    {
+      "id": "persona.Alana Ambrosio",
+      "no": "persona"
+    },
+    {
+      "id": "persona.Cientista de Dados",
+      "no": "persona"
+    },
+    {
+      "id": "persona.Dr. Ary Aguiar",
+      "no": "persona"
+    },
+    {
+      "id": "persona.Especialista em Contas Médicas",
+      "no": "persona"
+    },
+    {
+      "id": "persona.Jurídico",
+      "no": "persona"
+    },
+    {
+      "id": "persona.Paulo Antunes",
+      "no": "persona"
+    }
+  ],
+  "arestas": [
+    {
+      "de": "fonte.sinistro_csv",
+      "para": "bronze.sinistro_raw",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.gabarito_auditoria",
+      "para": "bronze.gabarito_raw",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.planilha_inteligencias",
+      "para": "bronze.inteligencias_raw",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "bronze.sinistro_raw",
+      "para": "quarantine.item_conta_rejeitado",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "semantic.map_tuss_conceito",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "semantic.dim_dominio_valor",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.contrato_pdf",
+      "para": "contracts.contract_params",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "bronze.sinistro_raw",
+      "para": "silver.item_conta",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.map_tuss_conceito",
+      "para": "silver.item_conta",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.dim_dominio_valor",
+      "para": "silver.item_conta",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.item_conta",
+      "para": "silver.conta",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.conta",
+      "para": "silver.atendimento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.item_conta",
+      "para": "silver.atendimento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "bronze.inteligencias_raw",
+      "para": "silver.funil_inteligencia",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.item_conta",
+      "para": "gold.dim_data",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.item_conta",
+      "para": "gold.dim_prestador",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.map_tuss_conceito",
+      "para": "gold.dim_item_tuss",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.dim_dominio_valor",
+      "para": "gold.dim_perfil_atendimento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "contracts.contract_params",
+      "para": "gold.dim_contrato",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "contracts.contract_params",
+      "para": "gold.dim_item_contratado",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.dim_item_contratado",
+      "para": "gold.dim_contrato",
+      "rel": "fk",
+      "coluna": "versao_contrato"
+    },
+    {
+      "de": "gold.dim_item_contratado",
+      "para": "gold.dim_item_tuss",
+      "rel": "fk",
+      "coluna": "cod_tuss"
+    },
+    {
+      "de": "contracts.contract_params",
+      "para": "gold.dim_regra",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "gold.dim_regra",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.funil_inteligencia",
+      "para": "gold.dim_inteligencia",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.item_conta",
+      "para": "gold.fato_item",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.conta",
+      "para": "gold.fato_item",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.dim_item_contratado",
+      "para": "gold.fato_item",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.dim_perfil_atendimento",
+      "para": "gold.fato_item",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.dim_prestador",
+      "rel": "fk",
+      "coluna": "id_prestador"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.dim_data",
+      "rel": "fk",
+      "coluna": "dt_atendimento"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.dim_item_tuss",
+      "rel": "fk",
+      "coluna": "cod_tuss"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.dim_perfil_atendimento",
+      "rel": "fk",
+      "coluna": "sk_perfil"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.dim_contrato",
+      "rel": "fk",
+      "coluna": "versao_contrato"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.fato_item_auditado",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "gold.fato_item_auditado",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "gold.dim_item_tuss",
+      "rel": "fk",
+      "coluna": "cod_tuss"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "gold.dim_data",
+      "rel": "fk",
+      "coluna": "dt_atendimento"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "gold.dim_contrato",
+      "rel": "fk",
+      "coluna": "versao_contrato"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "silver.conta",
+      "para": "gold.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.dim_regra",
+      "para": "gold.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.dim_item_contratado",
+      "para": "gold.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.dim_contrato",
+      "para": "gold.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "gold.dim_regra",
+      "rel": "fk",
+      "coluna": "regra_principal"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "gold.dim_contrato",
+      "rel": "fk",
+      "coluna": "versao_contrato"
+    },
+    {
+      "de": "silver.funil_inteligencia",
+      "para": "gold.fato_funil_economia",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_funil_economia",
+      "para": "gold.dim_inteligencia",
+      "rel": "fk",
+      "coluna": "inteligencia"
+    },
+    {
+      "de": "gold.fato_funil_economia",
+      "para": "gold.dim_data",
+      "rel": "fk",
+      "coluna": "competencia"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "gold.fato_glosa_ciclo",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.ponte_regra_inteligencia",
+      "para": "gold.fato_glosa_ciclo",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.eventos_funil_operadora",
+      "para": "gold.fato_glosa_ciclo",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.recursos_prestador",
+      "para": "gold.fato_glosa_ciclo",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.fato_apontamento",
+      "rel": "fk",
+      "coluna": "id_apontamento"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_prestador",
+      "rel": "fk",
+      "coluna": "id_prestador"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_regra",
+      "rel": "fk",
+      "coluna": "regra_principal"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_inteligencia",
+      "rel": "fk",
+      "coluna": "inteligencia"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_item_tuss",
+      "rel": "fk",
+      "coluna": "cod_tuss"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_contrato",
+      "rel": "fk",
+      "coluna": "versao_contrato"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_data",
+      "rel": "fk",
+      "coluna": "dt_identificacao"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_etapa_funil",
+      "rel": "fk",
+      "coluna": "etapa_atual"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_motivo",
+      "rel": "fk",
+      "coluna": "motivo_retencao"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_motivo",
+      "rel": "fk",
+      "coluna": "motivo_registro"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "gold.dim_motivo",
+      "rel": "fk",
+      "coluna": "motivo_reversao"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.fato_excedente_mensal",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "gold.fato_excedente_mensal",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.ref_linha_base_excedente",
+      "para": "gold.fato_excedente_mensal",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_excedente_mensal",
+      "para": "gold.dim_prestador",
+      "rel": "fk",
+      "coluna": "id_prestador"
+    },
+    {
+      "de": "gold.fato_excedente_mensal",
+      "para": "gold.dim_data",
+      "rel": "fk",
+      "coluna": "competencia"
+    },
+    {
+      "de": "gold.fato_excedente_mensal",
+      "para": "gold.ref_linha_base_excedente",
+      "rel": "fk",
+      "coluna": "versao_linha_base"
+    },
+    {
+      "de": "gold.v_avaliacao_gabarito",
+      "para": "gold.fato_auditoria_amostral",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_auditoria_amostral",
+      "para": "gold.fato_item_auditado",
+      "rel": "fk",
+      "coluna": "id_item"
+    },
+    {
+      "de": "gold.fato_auditoria_amostral",
+      "para": "gold.dim_regra",
+      "rel": "fk",
+      "coluna": "regra_principal"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "gold.dim_etapa_funil",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "gold.dim_motivo",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "gold.ponte_regra_inteligencia",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.ponte_regra_inteligencia",
+      "para": "gold.dim_regra",
+      "rel": "fk",
+      "coluna": "regra_id"
+    },
+    {
+      "de": "gold.ponte_regra_inteligencia",
+      "para": "gold.dim_inteligencia",
+      "rel": "fk",
+      "coluna": "inteligencia"
+    },
+    {
+      "de": "gold.fato_item",
+      "para": "gold.ref_linha_base_excedente",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "semantic.mv_auditoria_glosa",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_funil_economia",
+      "para": "semantic.mv_funil_economia",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "semantic.mv_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_glosa_ciclo",
+      "para": "semantic.mv_glosa_ciclo",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_excedente_mensal",
+      "para": "semantic.mv_excedente_mensal",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_auditoria_amostral",
+      "para": "semantic.mv_qualidade_auditoria",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "bronze.sinistro_raw",
+      "para": "ops.dq_resultados",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.contrato_pdf",
+      "para": "ops.llm_calls",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.llm_calls",
+      "para": "ops.v_ia_sanidade",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "gold.v_avaliacao_gabarito",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "bronze.gabarito_raw",
+      "para": "gold.v_avaliacao_gabarito",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.v_avaliacao_gabarito",
+      "para": "ops.v_precisao_recall",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.mv_apontamento",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.mv_qualidade_auditoria",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_funil_economia",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_auditoria_amostral",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.dq_resultados",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.v_ia_sanidade",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "quarantine.item_conta_rejeitado",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "bronze.sinistro_raw",
+      "para": "ops.v_sanidade_status",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.contrato_pdf",
+      "para": "ops.ia_aceite_golden",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.semantica_git",
+      "para": "ops.ia_aceite_golden",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "quarantine.item_conta_rejeitado",
+      "para": "ops.ia_sugestoes_conceito",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.map_tuss_conceito",
+      "para": "ops.ia_sugestoes_conceito",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "ops.avaliacao_resultados",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "fonte.gabarito_auditoria",
+      "para": "ops.avaliacao_resultados",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_auditoria_amostral",
+      "para": "ops.avaliacao_resultados",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "gold_shadow.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.rollout_destino",
+      "para": "gold_shadow.fato_apontamento",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.v_sanidade_status",
+      "para": "ops.rollout_estado_regra",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_apontamento",
+      "para": "ops.rollout_destino",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "gold.fato_item_auditado",
+      "para": "ops.rollout_destino",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.rollout_estado_regra",
+      "para": "ops.rollout_destino",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "ops.v_sanidade_status",
+      "para": "ops.rollout_destino",
+      "rel": "deriva_de"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M20",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M19",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M21",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M22",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M23",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M24",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M18",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M14",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M15",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M01",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M02",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M04",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M05",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_apontamento",
+      "para": "metrica.M26",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_qualidade_auditoria",
+      "para": "metrica.M10",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_qualidade_auditoria",
+      "para": "metrica.M25",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M12",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M13",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M16",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_funil_economia",
+      "para": "metrica.M17",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M03",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M06",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M07",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M27",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_excedente_mensal",
+      "para": "metrica.M30",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_excedente_mensal",
+      "para": "metrica.M28",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_excedente_mensal",
+      "para": "metrica.M29",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M34",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M33",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M35",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M31",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_glosa_ciclo",
+      "para": "metrica.M32",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M08",
+      "rel": "mede"
+    },
+    {
+      "de": "semantic.mv_auditoria_glosa",
+      "para": "metrica.M09",
+      "rel": "mede"
+    },
+    {
+      "de": "metrica.M02",
+      "para": "pergunta.Q01",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M04",
+      "para": "pergunta.Q01",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q01",
+      "para": "persona.Paulo Antunes",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M02",
+      "para": "pergunta.Q02",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M04",
+      "para": "pergunta.Q02",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q02",
+      "para": "persona.Dr. Ary Aguiar",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M06",
+      "para": "pergunta.Q03",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q03",
+      "para": "persona.Especialista em Contas Médicas",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M17",
+      "para": "pergunta.Q04",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q04",
+      "para": "persona.Alana Ambrosio",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M16",
+      "para": "pergunta.Q05",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M15",
+      "para": "pergunta.Q05",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q05",
+      "para": "persona.Dr. Ary Aguiar",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M19",
+      "para": "pergunta.Q06",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M14",
+      "para": "pergunta.Q06",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q06",
+      "para": "persona.Paulo Antunes",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M14",
+      "para": "pergunta.Q10",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M18",
+      "para": "pergunta.Q10",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q10",
+      "para": "persona.Paulo Antunes",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M12",
+      "para": "pergunta.Q07",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M13",
+      "para": "pergunta.Q07",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q07",
+      "para": "persona.Jurídico",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M09",
+      "para": "pergunta.Q08",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q08",
+      "para": "persona.Especialista em Contas Médicas",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M05",
+      "para": "pergunta.Q09",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q09",
+      "para": "persona.Paulo Antunes",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M20",
+      "para": "pergunta.Q11",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M21",
+      "para": "pergunta.Q11",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M22",
+      "para": "pergunta.Q11",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M23",
+      "para": "pergunta.Q11",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M24",
+      "para": "pergunta.Q11",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M18",
+      "para": "pergunta.Q11",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q11",
+      "para": "persona.Paulo Antunes",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M33",
+      "para": "pergunta.Q12",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q12",
+      "para": "persona.Dr. Ary Aguiar",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M32",
+      "para": "pergunta.Q13",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M13",
+      "para": "pergunta.Q13",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q13",
+      "para": "persona.Jurídico",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M28",
+      "para": "pergunta.Q14",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M29",
+      "para": "pergunta.Q14",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q14",
+      "para": "persona.Especialista em Contas Médicas",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M35",
+      "para": "pergunta.Q15",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q15",
+      "para": "persona.Alana Ambrosio",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M10",
+      "para": "pergunta.Q16",
+      "rel": "responde"
+    },
+    {
+      "de": "metrica.M25",
+      "para": "pergunta.Q16",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q16",
+      "para": "persona.Cientista de Dados",
+      "rel": "interessa_a"
+    },
+    {
+      "de": "metrica.M27",
+      "para": "pergunta.Q17",
+      "rel": "responde"
+    },
+    {
+      "de": "pergunta.Q17",
+      "para": "persona.Especialista em Contas Médicas",
+      "rel": "interessa_a"
+    }
+  ]
+}

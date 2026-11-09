@@ -6,9 +6,7 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
-# Saídas geradas ao rodar localmente (não são entregáveis)
-dados_sinteticos/
-contratos/runs/
+# Saídas geradas ao rodar localmente (não são entregáveis): outputs/runs, outputs/synthetic_data, outputs/results
 .DS_Store
-# Execuções do agente sobre outros arquivos (python -m entrega.gerar --sinistro ...)
-resultados/
+*.egg-info/
+outputs/

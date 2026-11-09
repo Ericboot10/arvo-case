@@ -1,0 +1,17 @@
+# Domínio evaluation · precisão e recall contra o gabarito do case.
+resources:
+  jobs:
+    evaluation_run:
+      name: arvo-evaluation-run-${bundle.target}
+      description: "Gabarito do case → precisão e recall (IC 95% de Wilson) e auditoria rodada 0. Rodar depois do medallion_run."
+      tasks:
+        - task_key: load_gold_standard
+          notebook_task:
+            notebook_path: ../../src/arvo/evaluation/databricks/f8_carregar_gabarito.py
+            base_parameters: {catalog: "${var.catalog}"}
+        - task_key: precision_recall
+          depends_on: [{task_key: load_gold_standard}]
+          notebook_task:
+            notebook_path: ../../src/arvo/platform/notebooks/executar_sql.py
+            base_parameters: {catalog: "${var.catalog}", arquivo: "../../evaluation/databricks/f8_avaliacao.sql"}
+      tags: {project: arvo, domain: evaluation, phase: F8}

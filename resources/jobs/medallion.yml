@@ -1,0 +1,24 @@
+# Domínio medallion · job que orquestra o pipeline: planilha → bronze, pipeline, coleta de qualidade de dados.
+resources:
+  jobs:
+    medallion_run:
+      name: arvo-medallion-run-${bundle.target}
+      description: "Planilha → bronze, pipeline Lakeflow (bronze→silver→gold + motor), coleta de DQ para ops.dq_resultados."
+      tasks:
+        - task_key: ingest_spreadsheet
+          notebook_task:
+            notebook_path: ../../src/arvo/medallion/notebooks/ingerir_planilha.py
+            base_parameters:
+              catalog: ${var.catalog}
+        - task_key: run_pipeline
+          depends_on: [{task_key: ingest_spreadsheet}]
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.medallion.id}
+        - task_key: collect_data_quality
+          depends_on: [{task_key: run_pipeline}]
+          notebook_task:
+            notebook_path: ../../src/arvo/medallion/notebooks/coletar_dq.py
+            base_parameters:
+              catalog: ${var.catalog}
+              pipeline_id: ${resources.pipelines.medallion.id}
+      tags: {project: arvo, domain: medallion, phase: F5}

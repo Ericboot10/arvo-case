@@ -1,0 +1,16 @@
+# Domínio medallion · pipeline Lakeflow (serverless): bronze → silver → gold → motor de regras.
+resources:
+  pipelines:
+    medallion:
+      name: arvo-medallion-${bundle.target}
+      catalog: ${var.catalog}
+      schema: silver                         # schema padrão. As tabelas usam nomes totalmente qualificados
+      serverless: true
+      libraries:
+        - notebook:
+            path: ../../src/arvo/medallion/pipeline_lakeflow.py
+      configuration:
+        arvo.catalog: ${var.catalog}
+        arvo.landing: /Volumes/${var.catalog}/bronze/landing/
+        arvo.repo_root: ${workspace.file_path}
+      tags: {project: arvo, domain: medallion, phase: F5}

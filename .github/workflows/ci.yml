@@ -28,31 +28,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30                          # teto do job: nunca mais 46 min travado
     env:
-      ARVO_SPARK_MEM: 3g                         # heap explícito do Spark local (ver medalhao/local.py)
+      ARVO_SPARK_MEM: 3g                         # heap explícito do Spark local (ver src/arvo/medallion/local.py)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - uses: actions/setup-java@v4              # Spark local para os testes da F5/F6
         with: {distribution: temurin, java-version: "17"}
-      - run: pip install pyyaml pandas pytest pytest-timeout pdfplumber openpyxl "pyspark==3.5.3"
-      - name: Sem Spark · semântica (G2), contrato (F3), plataforma (F4), arquitetura (doc = código), IA (F7)
-        run: pytest semantic/tests arvo_contrato/tests plataforma/tests arquitetura/tests ia/tests parte2/tests entrega/tests -q
-      - name: Prompts versionados e travados (ia/prompts.lock.json)
-        run: python -m ia.prompts verificar
+      - run: pip install -e ".[dev]"                # pacote arvo (src/) com as dependências do pyproject.toml
+      - name: Sem Spark · semântica, contratos, plataforma, arquitetura, IA, agentes, funil, entregáveis
+        run: pytest tests/semantic tests/contracts tests/platform tests/architecture tests/ai tests/agents tests/funnel tests/deliverables -q
+      - name: Prompts versionados e travados (src/arvo/ai/prompts.lock.json)
+        run: python -m arvo.ai.prompts verificar
       - name: Painel de sanidade gerado = indicadores.yaml (F9)
-        run: python -m sanidade.gerar --checar
+        run: python -m arvo.monitoring.gerar --checar
       # Cada suíte Spark em processo (e JVM) próprio: isolamento de memória entre suítes
       - name: Spark · medalhão (F5)
-        run: pytest medalhao/tests -q
+        run: pytest tests/medallion -q
       - name: Spark · motor de regras (F6)
-        run: pytest motor/tests -q
+        run: pytest tests/rules -q
       - name: Spark · avaliação científica (F8)
-        run: pytest avaliacao_cientifica/tests -q
+        run: pytest tests/evaluation -q
       - name: Spark · indicadores de sanidade (F9)
-        run: pytest sanidade/tests -q
+        run: pytest tests/monitoring -q
       - name: Spark · rollout por regra (F10)
-        run: pytest rollout/tests -q
+        run: pytest tests/rollout -q
 
   validar_bundle:
     # Só roda quando o workspace de stg existir (variável configurada no repositório). Até lá, fica pulado.
@@ -83,9 +83,9 @@ jobs:
       - uses: databricks/setup-cli@main
       - run: databricks bundle deploy -t stg
       - name: G4 · hello pipeline em stg
-        run: databricks bundle run plataforma_hello -t stg
+        run: databricks bundle run platform_smoke_test -t stg
       - name: Semântica em stg
-        run: databricks bundle run f2_semantica -t stg
+        run: databricks bundle run semantic_load -t stg
 
   deploy_prod:
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.promover_prod
@@ -102,4 +102,4 @@ jobs:
       - run: databricks bundle validate -t prod
       - run: databricks bundle deploy -t prod
       - name: G4 · hello pipeline em prod
-        run: databricks bundle run plataforma_hello -t prod
+        run: databricks bundle run platform_smoke_test -t prod
