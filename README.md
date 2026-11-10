@@ -7,7 +7,7 @@ Este é um case de seleção da Arvo. O agente audita a conta hospitalar contra 
 - **Precisão de 94,4% e recall de 90,0%** contra o gabarito.
 - **Nenhuma regra vai a envio automático antes do shadow.**
 
-**Para entender o projeto:** [`docs/how-it-works.md`](docs/how-it-works.md) explica o raciocínio, o agente passo a passo, como rodar com um mês novo e o papel do Databricks. A estrutura e o padrão de nomes (pastas, jobs, recursos do Databricks) estão em [`docs/conventions.md`](docs/conventions.md). Para reproduzir os agentes de IA (Genie, Claude e outros provedores): [`src/arvo/agents/README.md`](src/arvo/agents/README.md).
+**Para entender o projeto:** [`docs/how-it-works.md`](docs/how-it-works.md) explica o raciocínio, o agente passo a passo, como rodar com um mês novo e o papel do Databricks. A estrutura e o padrão de nomes (pastas, jobs, recursos do Databricks) estão em [`docs/conventions.md`](docs/conventions.md). Para reproduzir os agentes de IA (Genie, Claude e outros provedores): [`src/arvo/agents/README.md`](src/arvo/agents/README.md). Para mostrar o agente ao vivo: [`docs/demo-ao-vivo.md`](docs/demo-ao-vivo.md).
 
 **Onde estão as respostas:**
 - As 8 perguntas da Parte 1: [`deliverables/RESPOSTAS_CASE.md`](deliverables/RESPOSTAS_CASE.md).
@@ -75,7 +75,7 @@ docs/                    guia, plano, Free Edition, convenções
 | F7 · IA | [`src/arvo/ai/`](src/arvo/ai/) | Ports & adapters, roteador com política de dados, golden set por provedor, telemetria |
 | Agentes | [`src/arvo/agents/`](src/arvo/agents/) | Perguntas de negócio respondidas pela camada semântica: Genie para os dados, Claude (ou modelo do Databricks) para orquestrar |
 | F8 · avaliação | [`src/arvo/evaluation/`](src/arvo/evaluation/) | IC, estimativa populacional, divergências, adjudicação cega, matriz de custo |
-| F9 · sanidade | [`src/arvo/monitoring/`](src/arvo/monitoring/) | 38 indicadores (negócio primeiro), alertas SQL, painel AI/BI, portão de envio |
+| F9 · sanidade | [`src/arvo/monitoring/`](src/arvo/monitoring/) | 39 indicadores (negócio primeiro, Parte I e Parte II separadas), alertas SQL, painel AI/BI, portão de envio |
 | F10 · rollout | [`src/arvo/rollout/`](src/arvo/rollout/) | Estágios por regra, teto de valor pela matriz de custo, rebaixamento automático |
 | F11 · Parte 2 | [`src/arvo/funnel/`](src/arvo/funnel/) | Números do funil, reproduzíveis |
 | F12 · entrega | [`deliverables/`](deliverables/) | Respostas, apontamentos, pitch e o comando único |

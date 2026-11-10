@@ -14,10 +14,15 @@ tabelas:                       # <catalogo> é trocado pelo catálogo do ambient
   - <catalogo>.ops.v_precisao_recall
 instrucoes: |
   * As metric views (mv_*) são a fonte preferida: consulte medidas sempre com MEASURE(<medida>) e GROUP BY ALL.
-  * mv_auditoria_glosa = auditoria de UM prestador (Hospital São Rafael, id P001) em UMA competência (2025-06-01).
-    valor_apresentado = valor cobrado; valor_glosado = valor que o motor glosou; taxa_glosa = glosado ÷ apresentado.
-  * mv_funil_economia = funil da OPERAÇÃO INTEIRA (toda a rede), por inteligência e competência (6 meses).
-    indice_norte = economia efetivada ÷ sinistro processado (meta 2%). Não misture com os números do hospital.
+  * O case tem duas partes, com fontes e denominadores diferentes. Diga sempre de qual parte vem o número.
+  * Parte I · mv_auditoria_glosa = o agente auditando UM prestador (Hospital São Rafael, id P001) em UMA competência
+    (2025-06-01). valor_apresentado = valor cobrado; valor_glosado = valor que o motor glosou; taxa_glosa = glosado ÷
+    apresentado. É valor IDENTIFICADO, não economia: as glosas ficam em revisão e não entram no funil da rede.
+  * Parte II · mv_funil_economia = funil da OPERAÇÃO INTEIRA (toda a rede da Parthenon), por inteligência e competência
+    (6 meses), vindo da planilha de inteligências. indice_norte = economia efetivada ÷ sinistro processado da rede
+    (meta 2%). taxa_identificacao = identificado ÷ sinistro da rede.
+  * Nunca compare taxa_glosa do hospital com indice_norte da rede, nem some valores das duas views. A comparação
+    possível é identificado com identificado: taxa_glosa (Parte I) × taxa_identificacao (Parte II).
   * "No mês" sem data: use a competência mais recente disponível na view consultada.
   * Cláusulas: 2.2 = preço acima do Anexo I (regra R1, glosa só o excedente); 3.3 = itens inclusos no pacote
     (R2 taxa de sala, R2B sala de outro porte, R3 material de rotina; glosa integral); 4.2 = taxa de urgência em
@@ -41,7 +46,12 @@ exemplos:
       WHERE regra_principal IS NOT NULL
       GROUP BY ALL
       ORDER BY valor_glosado DESC
-  - pergunta: "Qual o índice-norte do mês mais recente?"
+  - pergunta: "Quanto o agente glosou no São Rafael e quanto isso é do sinistro do hospital?"
+    sql: |
+      SELECT MEASURE(valor_glosado) AS valor_glosado, MEASURE(itens_glosados) AS itens_glosados,
+             MEASURE(taxa_glosa) AS taxa_glosa
+      FROM <catalogo>.semantic.mv_auditoria_glosa
+  - pergunta: "Qual o índice-norte da rede no mês mais recente?"
     sql: |
       SELECT competencia, MEASURE(indice_norte) AS indice_norte, MEASURE(atingimento_meta) AS atingimento_meta
       FROM <catalogo>.semantic.mv_funil_economia

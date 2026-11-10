@@ -117,8 +117,8 @@ def _banda(r: dict) -> str:
 def resumo(rows: list[dict]) -> dict:
     por = {}
     for r in rows:
-        por.setdefault(r["camada_titulo"], {}).setdefault(r["status"], 0)
-        por[r["camada_titulo"]][r["status"]] += 1
+        por.setdefault(r["secao"], {}).setdefault(r["status"], 0)
+        por[r["secao"]][r["status"]] += 1
     return por
 
 
@@ -128,13 +128,13 @@ def markdown(rows: list[dict], portao: dict) -> str:
          "> planilha do funil, gabarito como rodada 0 de auditoria (não probabilística).", "",
          f"**Portão de envio: {'LIBERADO' if portao['liberado'] else 'BLOQUEADO'}**"
          + ("" if portao["liberado"] else " · " + "; ".join(f"{b['id_indicador']} {b['recorte']}" for b in portao["bloqueios"])), ""]
-    L += ["| Camada | " + " | ".join(gerar.STATUS) + " |", "|---|" + "---|" * len(gerar.STATUS)]
+    L += ["| Seção | " + " | ".join(gerar.STATUS) + " |", "|---|" + "---|" * len(gerar.STATUS)]
     for cam, st in resumo(rows).items():
         L.append(f"| {cam} | " + " | ".join(str(st.get(s, 0)) for s in gerar.STATUS) + " |")
     atual = None
     for r in rows:
-        if r["camada_titulo"] != atual:
-            atual = r["camada_titulo"]
+        if r["secao"] != atual:
+            atual = r["secao"]
             L += ["", f"## {atual}", "", "| Status | Id | Indicador | Recorte | Valor | Banda | Sev. | Dono | Ação |",
                   "|---|---|---|---|---|---|---|---|---|"]
         acao = r["acao"] if r["status"] == "ALERTA" else ""
@@ -153,9 +153,9 @@ def pagina_html(rows: list[dict], portao: dict) -> str:
                           "<th>Indicador</th><th>Recorte</th><th class='n'>Valor</th><th>Banda</th><th>Sev.</th><th>Dono</th>"
                           f"<th>Ação (se em alerta)</th></tr></thead><tbody>{''.join(linhas)}</tbody></table></div></section>")
     for r in rows:
-        if r["camada_titulo"] != atual:
+        if r["secao"] != atual:
             fechar()
-            atual, linhas = r["camada_titulo"], []
+            atual, linhas = r["secao"], []
         e = html.escape
         linhas.append(f"<tr><td><span class='st {cor[r['status']]}'>{r['status']}</span></td><td>{r['id_indicador']}</td>"
                       f"<td>{e(r['nome'])}</td><td class='rec'>{e(r['recorte'])}</td><td class='n'>{_fmt(r['valor'], r['id_indicador'])}</td>"
@@ -186,7 +186,7 @@ td.rec{{color:var(--mut);font-size:12px}}.st{{font-size:11px;font-weight:700;let
 <h1>Painel de sanidade · avaliação local</h1>
 <p class="sub">Negócio primeiro. Mesmo SQL do Databricks (dialeto local) · {quando}. Gabarito usado como rodada 0 de auditoria (não probabilística).</p>
 <div class="portao">Portão de envio: <b>{estado}</b>{motivos}</div>
-<div class="tw resumo"><table><thead><tr><th>Camada</th>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>
+<div class="tw resumo"><table><thead><tr><th>Seção</th>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>
 {''.join(blocos)}
 </main></body></html>
 """

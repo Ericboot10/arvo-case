@@ -34,11 +34,20 @@ camadas:
   dados:     {ordem: 3, titulo: Engenharia de dados}
   ia:        {ordem: 4, titulo: IA}
 
+# Escopo dos indicadores de negócio: as duas partes do case não se misturam (fontes, denominadores e donos diferentes).
+#   sao_rafael  Parte I · o agente sobre o sinistro do Hospital São Rafael (jun/2025), contrato PRT-2025-0417 e gabarito
+#   rede        Parte II · planilha de inteligências da rede inteira da Parthenon (6 meses), já agregada por inteligência
+# O índice-norte (S01) é da rede. As glosas do agente no São Rafael não entram nele.
+escopos:
+  sao_rafael: {ordem: 1, titulo: "Parte I · Agente · Hospital São Rafael (jun/2025)", fonte: sinistro-hospital-saorafael.csv}
+  rede:       {ordem: 2, titulo: "Parte II · Funil da rede Parthenon (6 meses)", fonte: Inteligencias_apos_6_meses.xlsx}
+
 indicadores:
   # ================================================================= NEGÓCIO · VALOR
   - id: S01
-    nome: Índice-norte (efetivado ÷ sinistro)
+    nome: Índice-norte da rede (efetivado ÷ sinistro da rede)
     camada: negocio
+    escopo: rede
     familia: valor
     metrica: M20
     competencia: ultima
@@ -48,8 +57,9 @@ indicadores:
     runbook: RB-VALOR
     acao: "Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu"
   - id: S02
-    nome: Atingimento da meta (run-rate)
+    nome: Atingimento da meta da rede (run-rate)
     camada: negocio
+    escopo: rede
     familia: valor
     metrica: M19
     competencia: ultima
@@ -61,6 +71,7 @@ indicadores:
   - id: S03
     nome: Taxa de glosa sobre o apresentado, por regra
     camada: negocio
+    escopo: sao_rafael
     familia: valor
     metrica: M03
     recorte: [regra_principal]
@@ -73,6 +84,7 @@ indicadores:
   - id: S04
     nome: Gap cobrado vs pactuado (R$)
     camada: negocio
+    escopo: sao_rafael
     familia: valor
     metrica: M06
     competencia: sigma
@@ -82,10 +94,24 @@ indicadores:
     runbook: RB-COBERTURA
     acao: "Levar os maiores gaps por conceito à pauta de renegociação"
 
+  - id: S40
+    nome: Taxa de glosa identificada (glosado ÷ apresentado)
+    camada: negocio
+    escopo: sao_rafael
+    familia: valor
+    metrica: M03
+    competencia: sigma
+    banda: {sigma: 3, janela: 6, historico_min: 6, origem: "banda histórica ±3σ do hospital; a taxa deve cair depois dos primeiros ciclos de glosa (RESPOSTAS_CASE, seção 4)"}
+    severidade: MEDIA
+    dono: pm_cs
+    runbook: RB-PRESTADOR
+    acao: "A taxa não caiu depois das primeiras glosas: deixa de ser erro de implantação e vira assunto de relacionamento com o prestador"
+
   # ================================================================= NEGÓCIO · QUALIDADE DA DECISÃO
   - id: S05
     nome: Precisão auditada (ponderada), por regra
     camada: negocio
+    escopo: sao_rafael
     familia: qualidade_decisao
     metrica: M10
     recorte: [regra_principal]
@@ -97,6 +123,7 @@ indicadores:
   - id: S06
     nome: Limite inferior do IC 95% da precisão, por regra
     camada: negocio
+    escopo: sao_rafael
     familia: qualidade_decisao
     sql: >
       SELECT concat('regra_principal=', regra_principal) AS recorte,
@@ -113,6 +140,7 @@ indicadores:
   - id: S07
     nome: Indevido não detectado (ponderado)
     camada: negocio
+    escopo: sao_rafael
     familia: qualidade_decisao
     metrica: M25
     banda: {max: 0.05, origem: "premissa AMB-21"}
@@ -123,6 +151,7 @@ indicadores:
   - id: S08
     nome: Taxa de recurso
     camada: negocio
+    escopo: sao_rafael
     familia: qualidade_decisao
     metrica: M12
     competencia: ultima
@@ -134,6 +163,7 @@ indicadores:
   - id: S09
     nome: Taxa de reversão (precisão em campo)
     camada: negocio
+    escopo: sao_rafael
     familia: qualidade_decisao
     metrica: M13
     competencia: ultima
@@ -147,6 +177,7 @@ indicadores:
   - id: S10
     nome: Ativação (identificado em ligadas ÷ total)
     camada: negocio
+    escopo: rede
     familia: funil
     metrica: M22
     competencia: sigma
@@ -158,6 +189,7 @@ indicadores:
   - id: S11
     nome: Envio à operadora (1 − retenção)
     camada: negocio
+    escopo: rede
     familia: funil
     metrica: M23
     recorte: [inteligencia]
@@ -170,6 +202,7 @@ indicadores:
   - id: S12
     nome: Perda de registro no prestador
     camada: negocio
+    escopo: rede
     familia: funil
     metrica: M17
     competencia: ultima
@@ -181,6 +214,7 @@ indicadores:
   - id: S13
     nome: Efetivação ÷ benchmark Arvo, por inteligência
     camada: negocio
+    escopo: rede
     familia: funil
     sql: >
       SELECT concat('inteligencia=', inteligencia) AS recorte,
@@ -199,6 +233,7 @@ indicadores:
   - id: S14
     nome: Contas com glosa, por prestador
     camada: negocio
+    escopo: sao_rafael
     familia: relacao_prestador
     metrica: M05
     recorte: [id_prestador]
@@ -211,6 +246,7 @@ indicadores:
   - id: S15
     nome: Concentração da glosa nas 10 maiores contas
     camada: negocio
+    escopo: sao_rafael
     familia: relacao_prestador
     sql: >
       SELECT 'total' AS recorte, SUM(CASE WHEN rk <= 10 THEN g END) / NULLIF(SUM(g), 0) AS valor
@@ -225,6 +261,7 @@ indicadores:
   - id: S16
     nome: Itens glosados, por regra (hit rate)
     camada: negocio
+    escopo: sao_rafael
     familia: comportamento
     metrica: M04
     recorte: [regra_principal]
@@ -237,6 +274,7 @@ indicadores:
   - id: S17
     nome: Cobertura de preço pactuado
     camada: negocio
+    escopo: sao_rafael
     familia: cobertura
     metrica: M07
     competencia: sigma
@@ -250,6 +288,7 @@ indicadores:
   - id: S18
     nome: Apontamentos que violam invariantes
     camada: negocio
+    escopo: sao_rafael
     familia: invariantes
     metrica: M26
     banda: {max: 0, origem: "invariante jurídico"}
@@ -260,6 +299,7 @@ indicadores:
   - id: S19
     nome: Itens com mais de uma glosa
     camada: negocio
+    escopo: sao_rafael
     familia: invariantes
     sql: >
       SELECT 'total' AS recorte, CAST(count(*) AS DOUBLE) AS valor
@@ -273,6 +313,7 @@ indicadores:
   - id: S20
     nome: Contas com glosa maior que o cobrado
     camada: negocio
+    escopo: sao_rafael
     familia: invariantes
     sql: >
       SELECT 'total' AS recorte, CAST(count(*) AS DOUBLE) AS valor
@@ -287,6 +328,7 @@ indicadores:
   - id: S21
     nome: Apontamentos sem item auditado (órfãos)
     camada: negocio
+    escopo: sao_rafael
     familia: invariantes
     sql: >
       SELECT 'total' AS recorte, CAST(count(*) AS DOUBLE) AS valor
@@ -431,7 +473,7 @@ runbooks:
     escalonamento: "PM/CS → cliente (Dr. Ary, Alana ou Paulo, conforme a etapa)"
   RB-PRESTADOR:
     titulo: Atrito com o prestador
-    gatilho: [S14, S15]
+    gatilho: [S14, S15, S40]
     passos:
       - "Abrir as contas do prestador no run e conferir se uma regra concentra a glosa"
       - "Validar com o Especialista se a cobrança mudou ou se a regra está agressiva"

@@ -167,7 +167,7 @@ São 38 indicadores, **negócio primeiro**, cada um com dono, banda, alerta e ru
 
 | Camada | Indicadores |
 |---|---|
-| **Valor** | Índice-norte (efetivado ÷ sinistro, meta 2%), atingimento da meta, taxa de glosa por regra, gap cobrado vs pactuado |
+| **Valor** | Parte I (São Rafael): taxa de glosa identificada, por regra e total, e gap cobrado vs pactuado. Parte II (rede): índice-norte (efetivado ÷ sinistro da rede, meta 2%) e atingimento da meta |
 | **Qualidade da decisão** | Precisão auditada por regra (com IC), indevido não detectado (recall), **taxa de recurso**, **taxa de reversão** |
 | **Funil** | Ativação, envio à operadora, perda de registro, efetivação vs benchmark |
 | **Prestador e comportamento** | % de contas glosadas por prestador, concentração da glosa, hit rate por regra, cobertura do Anexo I |

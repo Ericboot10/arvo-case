@@ -91,7 +91,7 @@
   },
   "genie": {
     "alvo": "genie",
-    "executado_em": "2026-11-09 20:34",
+    "executado_em": "2026-11-10 15:13",
     "resultados": [
       {
         "id": "B01",
@@ -103,24 +103,21 @@
           26589.35
         ],
         "faltando": [],
-        "latencia_s": 16.9,
-        "sql": "SELECT `competencia`, `clausula_principal`, MEASURE(`valor_glosado`) AS `valor_glosado`, MEASURE(`itens_glosados`) AS `itens_glosados`\nFROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`\nWHERE `clausula_principal` IS NOT NULL\n  AND `competencia` = (SELECT MAX(`competencia`) FROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`)\nGROUP BY ALL\nORDER BY `valor_glosado` DESC",
+        "latencia_s": 18.2,
+        "sql": "SELECT `clausula_principal`, MEASURE(`valor_glosado`) AS `valor_glosado`, MEASURE(`itens_glosados`) AS `itens_glosados`\nFROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`\nWHERE `clausula_principal` IS NOT NULL\nGROUP BY ALL\nORDER BY `valor_glosado` DESC",
         "erro": null,
         "linhas": [
           [
-            "2025-06-01",
             "3.3",
             "55484.17",
             "117"
           ],
           [
-            "2025-06-01",
             "2.2",
             "39875.41",
             "175"
           ],
           [
-            "2025-06-01",
             "4.2",
             "26589.35",
             "77"
@@ -136,7 +133,7 @@
           0.10210084098341
         ],
         "faltando": [],
-        "latencia_s": 13.6,
+        "latencia_s": 14.6,
         "sql": "SELECT `competencia`, MEASURE(`valor_glosado`) AS `valor_glosado`, MEASURE(`taxa_glosa`) AS `taxa_glosa`\nFROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`\nGROUP BY ALL\nORDER BY `competencia` DESC\nLIMIT 1",
         "erro": null,
         "linhas": [
@@ -173,12 +170,13 @@
           0.65
         ],
         "faltando": [],
-        "latencia_s": 20.0,
-        "sql": "SELECT `competencia`, MEASURE(`pct_contas_com_glosa`) AS `pct_contas_com_glosa`\nFROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`\nWHERE `id_prestador` = 'P001' AND `competencia` IS NOT NULL\nGROUP BY ALL\nORDER BY `competencia` DESC\nLIMIT 1",
+        "latencia_s": 14.5,
+        "sql": "SELECT `competencia`, `id_prestador`, MEASURE(`pct_contas_com_glosa`) AS `pct_contas_com_glosa` FROM `arvo_dev`.`semantic`.`mv_auditoria_glosa` WHERE `id_prestador` IS NOT NULL AND `competencia` IS NOT NULL GROUP BY ALL ORDER BY `competencia` DESC, `id_prestador` ASC",
         "erro": null,
         "linhas": [
           [
             "2025-06-01",
+            "P001",
             "0.65"
           ]
         ]
@@ -191,8 +189,8 @@
           0.06721698113207547
         ],
         "faltando": [],
-        "latencia_s": 14.9,
-        "sql": "SELECT MEASURE(`taxa_conflito_semantico`) AS taxa_conflito_semantico\nFROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`\nGROUP BY ALL",
+        "latencia_s": 14.4,
+        "sql": "SELECT MEASURE(`taxa_conflito_semantico`) AS `taxa_conflito_semantico`\nFROM `arvo_dev`.`semantic`.`mv_auditoria_glosa`\nGROUP BY ALL",
         "erro": null,
         "linhas": [
           [
@@ -229,8 +227,8 @@
           138895.51
         ],
         "faltando": [],
-        "latencia_s": 14.1,
-        "sql": "SELECT `tipo_inteligencia`, MEASURE(`economia_efetivada`) AS `economia_efetivada_total`\nFROM `arvo_dev`.`semantic`.`mv_funil_economia`\nWHERE `tipo_inteligencia` IS NOT NULL\nGROUP BY ALL\nORDER BY `economia_efetivada_total` DESC",
+        "latencia_s": 18.6,
+        "sql": "SELECT `tipo_inteligencia`, MEASURE(`economia_efetivada`) AS `economia_efetivada_total`\nFROM arvo_dev.semantic.mv_funil_economia\nWHERE `tipo_inteligencia` IS NOT NULL\nGROUP BY `tipo_inteligencia`\nORDER BY `economia_efetivada_total` DESC",
         "erro": null,
         "linhas": [
           [
@@ -252,8 +250,8 @@
           0.9
         ],
         "faltando": [],
-        "latencia_s": 20.4,
-        "sql": "SELECT `precisao`, `precisao_ic_inf`, `precisao_ic_sup`, `recall`, `recall_ic_inf`, `recall_ic_sup`\nFROM arvo_dev.ops.v_precisao_recall\nWHERE recorte = 'total' AND precisao IS NOT NULL AND recall IS NOT NULL",
+        "latencia_s": 19.8,
+        "sql": "SELECT `precisao`, `precisao_ic_inf`, `precisao_ic_sup`, `recall`, `recall_ic_inf`, `recall_ic_sup`\nFROM arvo_dev.ops.v_precisao_recall\nWHERE recorte = 'total' AND precisao IS NOT NULL AND recall IS NOT NULL\nORDER BY ordem ASC",
         "erro": null,
         "linhas": [
           [

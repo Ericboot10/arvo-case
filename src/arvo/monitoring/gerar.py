@@ -39,6 +39,7 @@ STATUS = ["OK", "ALERTA", "CALIBRANDO", "SEM_DADO", "SEM_FONTE"]
 # Criadas pelo próprio job da F9 antes da view de status (resources/jobs/monitoring.yml · monitoring_refresh)
 CRIADAS_PELO_JOB_F9 = {"ops.v_ia_sanidade"}
 CRON = {"CRITICA": "0 0 * * * ?", "ALTA": "0 0 7 * * ?", "MEDIA": "0 0 7 * * ?"}   # quartz
+FONTE_REDE = "gold.fato_funil_economia"   # planilha da rede (Parte II); o resto do negócio é o agente no São Rafael (Parte I)
 REF = re.compile(r"\{([a-z_]+\.[a-z_]+)\}")
 
 
@@ -100,6 +101,14 @@ def validar(c: dict) -> list[str]:
             erros.append(f"{p}: severidade inválida")
         if i["camada"] not in spec["camadas"]:
             erros.append(f"{p}: camada inválida")
+        if i["camada"] == "negocio":
+            esp = "rede" if FONTE_REDE in fontes(i, c) else "sao_rafael"
+            if i.get("escopo") not in spec["escopos"]:
+                erros.append(f"{p}: indicador de negócio sem escopo (sao_rafael | rede)")
+            elif i["escopo"] != esp:
+                erros.append(f"{p}: escopo {i['escopo']} diverge da fonte (esperado {esp})")
+        elif "escopo" in i:
+            erros.append(f"{p}: escopo só vale para a camada negocio")
         if i["runbook"] not in rbs or p not in rbs[i["runbook"]]["gatilho"]:
             erros.append(f"{p}: runbook {i['runbook']} inexistente ou sem o indicador no gatilho")
         if "metrica" in i:
@@ -213,15 +222,27 @@ def disponiveis_databricks(c: dict) -> set[str]:
     return {t for t, v in c["modelo"].items() if v.get("status") == "implementado"} | CRIADAS_PELO_JOB_F9
 
 
+def secao(i: dict, spec: dict) -> tuple[int, str]:
+    """(posição, título) da seção do indicador. O negócio se divide pelo escopo: Parte I antes da Parte II."""
+    cam = spec["camadas"][i["camada"]]
+    if i["camada"] == "negocio":
+        e = spec["escopos"][i["escopo"]]
+        return (cam["ordem"] * 10 + e["ordem"], e["titulo"])
+    return (cam["ordem"] * 10, cam["titulo"])
+
+
 def select_status(c: dict, dialeto: str, disponiveis: set[str]) -> str:
-    """O SELECT da view ops.v_sanidade_status. Indicadores sem fonte entram com status SEM_FONTE (não somem)."""
+    """O SELECT da view ops.v_sanidade_status. Indicadores sem fonte entram com status SEM_FONTE (não somem).
+    `ordem` agrupa por seção (Parte I, Parte II, semântica, dados, IA) e, dentro dela, segue o YAML."""
     spec = c["spec"]
     meta = []
-    for ordem, i in enumerate(spec["indicadores"], 1):
+    for pos, i in enumerate(spec["indicadores"], 1):
         tem = all(f in disponiveis for f in fontes(i, c))
         b = banda(i, c)
+        sec_ordem, sec_titulo = secao(i, spec)
         meta.append("(" + ", ".join([
-            _lit(i["id"]), str(ordem), _lit(i["camada"]), _lit(spec["camadas"][i["camada"]]["titulo"]), _lit(i["familia"]),
+            _lit(i["id"]), str(sec_ordem * 1000 + pos), _lit(i["camada"]), _lit(spec["camadas"][i["camada"]]["titulo"]),
+            _lit(i.get("escopo") or "plataforma"), _lit(sec_titulo), _lit(i["familia"]),
             _lit(i["nome"]), _lit(i.get("metrica") or i.get("limite_ia") or "sql"), _lit(i["severidade"]),
             _lit(i["severidade"] == "CRITICA"), _lit(i["dono"]), _lit(i["runbook"]), _lit(acao(i, c)),
             _lit(b["origem"]), _lit(tem)]) + ")")
@@ -234,13 +255,13 @@ def select_status(c: dict, dialeto: str, disponiveis: set[str]) -> str:
     return f"""WITH meta AS (
   SELECT * FROM VALUES
     {(','+chr(10)+'    ').join(meta)}
-  AS t(id_indicador, ordem, camada, camada_titulo, familia, nome, definicao, severidade, bloqueia_envio, dono,
+  AS t(id_indicador, ordem, camada, camada_titulo, escopo, secao, familia, nome, definicao, severidade, bloqueia_envio, dono,
        runbook, acao, origem_banda, fonte_disponivel)
 ),
 medicoes AS (
   {union}
 )
-SELECT m.ordem, m.id_indicador, m.camada, m.camada_titulo, m.familia, m.nome, m.definicao, m.severidade,
+SELECT m.ordem, m.id_indicador, m.camada, m.camada_titulo, m.escopo, m.secao, m.familia, m.nome, m.definicao, m.severidade,
        m.bloqueia_envio, m.dono, m.runbook, m.acao, m.origem_banda,
        coalesce(d.recorte, 'total') AS recorte, d.valor, d.banda_min, d.banda_max, d.n_historico, d.historico_min,
        CASE WHEN NOT m.fonte_disponivel THEN 'SEM_FONTE'
@@ -265,13 +286,17 @@ def sql_view(c: dict) -> str:
 USE CATALOG IDENTIFIER(:catalog);
 
 CREATE OR REPLACE VIEW ops.v_sanidade_status
-COMMENT 'Indicadores de sanidade (F9): negócio primeiro, depois semântica, dados e IA. Fonte: src/arvo/monitoring/indicadores.yaml'
+COMMENT 'Indicadores de sanidade (F9): negócio primeiro (Parte I · agente no São Rafael, depois Parte II · funil da rede), depois semântica, dados e IA. Fonte: src/arvo/monitoring/indicadores.yaml'
 AS
 {select_status(c, "databricks", disp)};
 """
 
 
 # ===================================================================================================== alertas
+def _rotulo(i: dict) -> str:
+    return {"sao_rafael": "Parte I · ", "rede": "Parte II · "}.get(i.get("escopo"), "")
+
+
 def alertas_yaml(c: dict) -> str:
     out, dest = {}, c["destinos"]
     for i in c["spec"]["indicadores"]:
@@ -283,7 +308,7 @@ def alertas_yaml(c: dict) -> str:
         if subs:
             notif["subscriptions"] = subs
         out[f"monitoring_{i['id'].lower()}"] = {      # padrão: arvo-<domínio> · <id> · <nome> [<severidade>]
-            "display_name": f"arvo-monitoring · {i['id']} · {i['nome']} [{i['severidade']}]",
+            "display_name": f"arvo-monitoring · {i['id']} · {_rotulo(i)}{i['nome']} [{i['severidade']}]",
             "query_text": ("SELECT count_if(status = 'ALERTA') AS n_alerta, "
                            "concat_ws('; ', collect_list(CASE WHEN status = 'ALERTA' THEN recorte END)) AS recortes "
                            f"FROM ${{var.catalog}}.ops.v_sanidade_status WHERE id_indicador = '{i['id']}'"),
@@ -352,26 +377,127 @@ def _tabela(nome, ds, campos, titulo, x, y, w=6, h=8) -> dict:
             "position": {"x": x, "y": y, "width": w, "height": h}}
 
 
+# ===================================================================================================== painel · dados do case
+# Parte I: cada item de conta do São Rafael com as colunas originais do CSV e a decisão do agente.
+# O identificador do beneficiário aparece só como pseudônimo (ADR-006: o id em claro existe apenas na bronze).
+SQL_ITENS_SAO_RAFAEL = """
+SELECT s.id_prestador, s.id_item, s.id_conta, s.id_beneficiario_hash AS id_beneficiario_pseudonimo,
+       s.dt_atendimento, s.carater_origem AS carater_atendimento, s.regime_origem AS tipo_conta, s.cod_tuss,
+       s.desc_item_origem AS desc_item, s.tipo_item_origem AS tipo_item, s.qtd, s.vl_unitario, s.vl_total, s.nome_prestador,
+       CASE WHEN i.glosado THEN 'Sim' ELSE 'Não' END AS glosado,
+       CAST(coalesce(a.vl_glosado, 0) AS DECIMAL(12, 2)) AS vl_glosado,
+       a.regra_principal, a.clausula_principal,
+       CASE r.defensabilidade WHEN 'mais_forte' THEN 'Mais defensável' WHEN 'muito_forte' THEN 'Muito forte'
+            WHEN 'forte_com_ressalva' THEN 'Forte, com ressalva' WHEN 'forte_fragil_em_ps' THEN 'Forte; frágil em Pronto Socorro'
+            WHEN 'fragil' THEN 'Frágil' END AS defensabilidade,
+       nullif(array_join(a.clausulas_subsidiarias, ', '), '') AS clausulas_subsidiarias,
+       coalesce(a.justificativa, 'Sem glosa: nenhuma regra do contrato PRT-2025-0417 se aplica ao item.') AS justificativa,
+       CASE WHEN a.id_item IS NULL THEN NULL
+            WHEN a.status_envio = 'REVISAO_HUMANA' THEN concat('Revisão humana: ', a.motivo_revisao)
+            WHEN d.destino_envio = 'NAO_ENVIAR' THEN 'Não enviada: regra em shadow (F10)'
+            WHEN d.destino_envio = 'ENVIO_AUTOMATICO' THEN 'Envio automático'
+            WHEN d.destino_envio IS NOT NULL THEN d.destino_envio
+            ELSE 'Pronta; aguarda decisão do rollout' END AS situacao_glosa,
+       CASE WHEN g.rotulado THEN CASE WHEN g.real THEN 'Sim' ELSE 'Não' END END AS gabarito_indevido
+FROM silver.item_conta s
+JOIN gold.fato_item_auditado i ON i.id_item = s.id_item
+LEFT JOIN gold.fato_apontamento a ON a.id_item = s.id_item
+LEFT JOIN gold.dim_regra r ON r.versao_regra = a.versao_regra
+LEFT JOIN (SELECT id_apontamento, max_by(destino_envio, decidido_em) AS destino_envio
+           FROM ops.rollout_destino GROUP BY id_apontamento) d ON d.id_apontamento = a.id_apontamento
+LEFT JOIN gold.v_avaliacao_gabarito g ON g.id_item = s.id_item
+ORDER BY s.id_conta, s.id_item"""
+COLS_ITENS = ["id_prestador", "id_item", "id_conta", "id_beneficiario_pseudonimo", "dt_atendimento", "carater_atendimento",
+              "tipo_conta", "cod_tuss", "desc_item", "tipo_item", "qtd", "vl_unitario", "vl_total", "nome_prestador",
+              "glosado", "vl_glosado", "regra_principal", "clausula_principal", "defensabilidade", "clausulas_subsidiarias",
+              "justificativa", "situacao_glosa", "gabarito_indevido"]
+
+# Parte II: tudo sai das colunas da planilha (gold.fato_funil_economia, competência mais recente). Nada estimado,
+# exceto `total_possivel` = economia identificada × média de efetivação Arvo (duas colunas da planilha), que supõe a
+# inteligência ligada e todo o identificado chegando ao prestador. A meta de 2% do sinistro é a do contrato com a Parthenon.
+_FUNIL_ULTIMA = "f AS (SELECT * FROM gold.fato_funil_economia WHERE competencia = (SELECT max(competencia) FROM gold.fato_funil_economia))"
+SQL_PLANILHA = f"""
+WITH {_FUNIL_ULTIMA},
+linhas AS (
+  SELECT 0 AS ordem, inteligencia, tipo_inteligencia AS tipo, status_inteligencia AS status, vl_identificado,
+         vl_enviado_operadora, vl_enviado_prestador, vl_efetivado, taxa_efetivacao_benchmark,
+         vl_identificado * taxa_efetivacao_benchmark AS vl_possivel
+  FROM f
+  UNION ALL
+  SELECT 1, 'Total', '', '', sum(vl_identificado), sum(vl_enviado_operadora), sum(vl_enviado_prestador), sum(vl_efetivado),
+         avg(taxa_efetivacao_benchmark), sum(vl_identificado * taxa_efetivacao_benchmark)
+  FROM f)
+SELECT inteligencia, tipo, status,
+       round(vl_identificado, 2) AS economia_identificada, round(vl_enviado_operadora, 2) AS enviada_operadora,
+       round(vl_enviado_prestador, 2) AS enviada_prestador, round(vl_efetivado, 2) AS economia_efetivada,
+       round(100 * taxa_efetivacao_benchmark, 1) AS media_efetivacao_todos_clientes_pct,
+       round(vl_possivel, 2) AS total_possivel, round(vl_possivel - vl_efetivado, 2) AS falta_para_o_possivel
+FROM linhas ORDER BY ordem, CASE status WHEN 'Ligada' THEN 0 ELSE 1 END, vl_identificado DESC"""
+COLS_PLANILHA = ["inteligencia", "tipo", "status", "economia_identificada", "enviada_operadora", "enviada_prestador",
+                 "economia_efetivada", "media_efetivacao_todos_clientes_pct", "total_possivel", "falta_para_o_possivel"]
+SQL_META = f"""
+WITH {_FUNIL_ULTIMA},
+t AS (SELECT sum(vl_identificado) AS ident, sum(vl_efetivado) AS efet,
+             sum(vl_identificado * taxa_efetivacao_benchmark) AS poss, max(vl_sinistro_processado) AS sin FROM f)
+SELECT round(sin, 2) AS sinistro_operadora, round(0.02 * sin, 2) AS meta_rs,
+       round(efet, 2) AS economia_efetivada, round(100 * efet / sin, 2) AS efetivado_pct_sinistro,
+       round(100 * efet / (0.02 * sin), 1) AS efetivado_pct_meta,
+       round(poss, 2) AS total_possivel, round(100 * poss / sin, 2) AS possivel_pct_sinistro,
+       round(100 * poss / (0.02 * sin), 1) AS possivel_pct_meta,
+       round(ident, 2) AS economia_identificada, round(100 * ident / sin, 2) AS identificado_pct_sinistro
+FROM t"""
+# Funil em R$: cada etapa é uma coluna da planilha; a perda é a diferença entre duas colunas (sem interpretar o motivo).
+SQL_FUNIL_ETAPAS = f"""
+WITH {_FUNIL_ULTIMA},
+t AS (SELECT CAST(sum(vl_identificado) AS DOUBLE) AS ident,
+             CAST(sum(CASE WHEN status_inteligencia = 'Ligada' THEN vl_identificado END) AS DOUBLE) AS lig,
+             CAST(sum(vl_enviado_operadora) AS DOUBLE) AS op, CAST(sum(vl_enviado_prestador) AS DOUBLE) AS pr,
+             CAST(sum(vl_efetivado) AS DOUBLE) AS ef, CAST(max(vl_sinistro_processado) AS DOUBLE) AS sin FROM f)
+SELECT etapa, round(valor, 2) AS valor_rs, round(100 * valor / sin, 2) AS pct_sinistro,
+       round(100 * valor / ident, 1) AS pct_do_identificado, round(perda, 2) AS perda_rs, origem_da_perda
+FROM t LATERAL VIEW stack(5,
+  '1 · Identificada (26 inteligências)', ident, CAST(NULL AS DOUBLE), '',
+  '2 · Identificada nas ligadas', lig, ident - lig, 'Inteligências com status Desligada: identificam, mas a planilha não registra envio',
+  '3 · Enviada a operadora', op, lig - op, 'Identificada nas ligadas − Enviada a Operadora',
+  '4 · Enviada para prestador', pr, op - pr, 'Enviada a Operadora − Enviada para Prestador',
+  '5 · Efetivada', ef, pr - ef, 'Enviada para Prestador − Efetivado') s AS etapa, valor, perda, origem_da_perda
+ORDER BY etapa"""
+
+
+
 def painel(c: dict) -> dict:
     """Dashboard AI/BI (.lvdash.json). Datasets sem catálogo: o bundle injeta dataset_catalog por target."""
-    def status(cam: str) -> dict:
-        return _ds(f"ds_status_{cam}", f"Status · {c['spec']['camadas'][cam]['titulo']}", f"""
-SELECT {', '.join(SELECT_STATUS)}, ordem FROM ops.v_sanidade_status WHERE camada = '{cam}'
+    esc = c["spec"]["escopos"]
+
+    def status(chave: str, titulo: str, filtro: str) -> dict:
+        return _ds(f"ds_status_{chave}", f"Status · {titulo}", f"""
+SELECT {', '.join(SELECT_STATUS)}, ordem FROM ops.v_sanidade_status WHERE {filtro}
 ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,
          ordem, recorte""")
 
+    secoes = [(e, t["titulo"], f"escopo = '{e}'") for e, t in esc.items()] + \
+             [(cam, t["titulo"], f"camada = '{cam}'") for cam, t in c["spec"]["camadas"].items() if cam != "negocio"]
+
     datasets = [
-        _ds("ds_resumo", "Resumo por camada × status", """
-SELECT camada_titulo AS camada, status, count(*) AS indicadores FROM ops.v_sanidade_status GROUP BY ALL"""),
+        _ds("ds_resumo", "Resumo por seção × status", """
+SELECT secao, status, count(*) AS indicadores FROM ops.v_sanidade_status GROUP BY ALL"""),
+        _ds("ds_itens", "Parte I · itens de conta do São Rafael com a decisão do agente", SQL_ITENS_SAO_RAFAEL),
+        _ds("ds_planilha", "Parte II · planilha de inteligências (linha a linha)", SQL_PLANILHA),
+        _ds("ds_meta", "Parte II · meta e possível", SQL_META),
+        _ds("ds_funil_etapas", "Parte II · funil em R$ (colunas da planilha)", SQL_FUNIL_ETAPAS),
+        _ds("ds_parte1", "Parte I · glosa do agente no São Rafael", """
+SELECT MEASURE(valor_glosado) AS valor_glosado, MEASURE(itens_glosados) AS itens_glosados,
+       round(100 * MEASURE(taxa_glosa), 1) AS taxa_glosa_pct, MEASURE(valor_apresentado) AS valor_apresentado
+FROM semantic.mv_auditoria_glosa"""),
         _ds("ds_portao", "Portão de envio", """
 SELECT count_if(status = 'ALERTA' AND bloqueia_envio) AS bloqueios_de_envio,
        count_if(status = 'ALERTA') AS indicadores_em_alerta FROM ops.v_sanidade_status"""),
-        _ds("ds_norte", "Índice-norte e fatores (última competência)", """
+        _ds("ds_norte", "Parte II · índice-norte da rede (última competência)", """
 SELECT competencia, round(100 * MEASURE(indice_norte), 2) AS indice_norte_pct,
        round(100 * MEASURE(atingimento_meta), 1) AS atingimento_meta_pct,
        MEASURE(economia_efetivada) AS economia_efetivada
 FROM semantic.mv_funil_economia GROUP BY competencia ORDER BY competencia DESC LIMIT 1"""),
-        _ds("ds_fatores", "Fatores do norte (M21 × M22 × M23 × M24 × M18)", """
+        _ds("ds_fatores", "Parte II · fatores do norte (M21 × M22 × M23 × M24 × M18)", """
 SELECT etapa, round(100 * taxa, 2) AS taxa_pct FROM (
   SELECT competencia, MEASURE(taxa_identificacao) AS identificacao, MEASURE(taxa_ativacao) AS ativacao,
          MEASURE(taxa_envio) AS envio, MEASURE(taxa_registro) AS registro, MEASURE(taxa_efetivacao) AS efetivacao
@@ -402,23 +528,60 @@ FROM ops.v_precisao_recall WHERE ordem = 1 ORDER BY recorte"""),
         _ds("ds_ia_serie", "IA por dia", """
 SELECT dia, concat(task_id, ' · ', adapter) AS tarefa_adapter, taxa_schema_valido, custo_estimado_usd, latencia_p95_ms
 FROM ops.v_ia_sanidade"""),
-    ] + [status(cam) for cam in c["spec"]["camadas"]]
+    ] + [status(*s) for s in secoes]
 
-    neg = [
-        _texto("t_neg", ["## Sanidade · Negócio primeiro",
-                         "Dados do case Arvo: sinistro e gabarito do Hospital São Rafael (jun/2025), contrato PRT-2025-0417 e "
-                         "planilha de inteligências (rede inteira, 6 meses). Nenhum dado gerado.",
-                         "Valor, qualidade da decisão, funil, prestador e **invariantes**. Invariante em ALERTA **bloqueia o envio**. "
-                         "CALIBRANDO = banda dinâmica ainda sem histórico suficiente; SEM_FONTE = tabela ainda não existe."], 0, 0, h=3),
-        _contador("c_bloq", "ds_portao", "bloqueios_de_envio", "Bloqueios de envio (deve ser 0)", 0, 3),
-        _contador("c_norte", "ds_norte", "indice_norte_pct", "Índice-norte, % do sinistro (meta 2%)", 2, 3),
-        _contador("c_meta", "ds_norte", "atingimento_meta_pct", "Atingimento da meta, %", 4, 3),
-        _barra("b_fatores", "ds_fatores", "etapa", "taxa_pct", "Fatores do norte (% em cada etapa)", 0, 6),
-        _barra("b_regra", "ds_glosa_regra", "regra_principal", "valor_glosado", "Glosa por regra (R$)", 3, 6),
-        _tabela("tb_neg", "ds_status_negocio", COLS_STATUS, "Indicadores de negócio", 0, 12, h=10),
+    parte1 = [
+        _texto("t_p1", [f"## {esc['sao_rafael']['titulo']}",
+                        "Cada linha é um item de conta do sinistro do Hospital São Rafael (jun/2025), com as colunas originais "
+                        f"de `{esc['sao_rafael']['fonte']}` e a decisão do agente: glosado ou não, valor, regra e cláusula, "
+                        "defensabilidade da regra principal e a justificativa.",
+                        "Item em mais de uma regra: a principal é a de texto mais literal; as outras ficam como subsidiárias. "
+                        "Valor **identificado**, não economia: nenhuma glosa foi enviada ao prestador e nada disso entra no "
+                        "índice-norte da rede (Parte II). `gabarito_indevido` = rótulo do gabarito do case (263 itens)."], 0, 0, h=3),
+        _contador("c_p1_valor", "ds_parte1", "valor_glosado", "Glosa identificada (R$)", 0, 3),
+        _contador("c_p1_itens", "ds_parte1", "itens_glosados", "Itens glosados (de 1.696)", 2, 3),
+        _contador("c_p1_taxa", "ds_parte1", "taxa_glosa_pct", "% do sinistro do hospital", 4, 3),
+        _tabela("tb_itens", "ds_itens", COLS_ITENS, "Itens de conta · São Rafael · decisão do agente", 0, 6, h=16),
+        _barra("b_regra", "ds_glosa_regra", "regra_principal", "valor_glosado", "Glosa por regra (R$)", 0, 22, w=6, h=5),
+    ]
+    parte2 = [
+        _texto("t_p2", [f"## {esc['rede']['titulo']}",
+                        f"Funil de economia da operação inteira, como está em `{esc['rede']['fonte']}`. Não depende do agente da Parte I.",
+                        "Cada etapa é uma coluna da planilha: Identificada → (só as ligadas) → Enviada a Operadora → Enviada para "
+                        "Prestador → Efetivado. A perda de cada etapa é a diferença entre duas colunas. **Índice-norte** = "
+                        "efetivado ÷ sinistro da operadora (meta 2%)."], 0, 0, h=3),
+        _contador("c_norte", "ds_norte", "indice_norte_pct", "Índice-norte da rede, % (meta 2%)", 0, 3),
+        _contador("c_meta", "ds_norte", "atingimento_meta_pct", "Atingimento da meta, %", 2, 3),
+        _contador("c_efet", "ds_norte", "economia_efetivada", "Economia efetivada (R$/mês)", 4, 3),
+        _barra("b_funil", "ds_funil_etapas", "etapa", "valor_rs", "Funil em R$ (colunas da planilha)", 0, 6, w=6),
+        _tabela("tb_funil", "ds_funil_etapas", ["etapa", "valor_rs", "pct_sinistro", "pct_do_identificado", "perda_rs",
+                                                "origem_da_perda"], "Etapas e perdas", 0, 12, h=5),
+    ]
+    planilha = [
+        _texto("t_pl", ["## Parte II · Inteligências da Arvo · planilha de 6 meses",
+                        "Uma linha por inteligência, com as colunas da planilha. **total_possivel** = economia identificada × "
+                        "média de efetivação de todos os clientes Arvo (duas colunas da planilha): quanto a inteligência renderia "
+                        "ligada e com todo o identificado chegando ao prestador. Meta = 2% do sinistro processado da operadora."],
+               0, 0, h=3),
+        _contador("c_pl_efet", "ds_meta", "economia_efetivada", "Efetivado hoje (R$/mês)", 0, 3),
+        _contador("c_pl_efet_sin", "ds_meta", "efetivado_pct_sinistro", "Efetivado, % do sinistro", 2, 3),
+        _contador("c_pl_efet_meta", "ds_meta", "efetivado_pct_meta", "Quanto da meta de 2% já atingimos, %", 4, 3),
+        _contador("c_pl_poss", "ds_meta", "total_possivel", "Possível com todas as inteligências (R$/mês)", 0, 6),
+        _contador("c_pl_poss_sin", "ds_meta", "possivel_pct_sinistro", "Possível, % do sinistro", 2, 6),
+        _contador("c_pl_poss_meta", "ds_meta", "possivel_pct_meta", "Possível, % da meta", 4, 6),
+        _tabela("tb_planilha", "ds_planilha", COLS_PLANILHA, "Inteligências · linha a linha (última linha = total)", 0, 9, h=12),
+    ]
+    sanidade = [
+        _texto("t_san", ["## Sanidade · indicadores de negócio",
+                         "Status de cada indicador, separado por parte. Invariante em ALERTA **bloqueia o envio**. "
+                         "CALIBRANDO = banda dinâmica ainda sem histórico; SEM_FONTE = tabela ainda não existe."], 0, 0),
+        _contador("c_bloq", "ds_portao", "bloqueios_de_envio", "Bloqueios de envio (deve ser 0)", 0, 2),
+        _contador("c_alertas", "ds_portao", "indicadores_em_alerta", "Indicadores em alerta", 2, 2),
+        _tabela("tb_p1", "ds_status_sao_rafael", COLS_STATUS, "Indicadores · Parte I · São Rafael", 0, 5, h=10),
+        _tabela("tb_p2", "ds_status_rede", COLS_STATUS, "Indicadores · Parte II · rede", 0, 15, h=10),
     ]
     pr = [
-        _texto("t_pr", ["## Precisão e recall · gabarito do case",
+        _texto("t_pr", ["## Parte I · Precisão e recall · gabarito do case",
                         "Motor de regras sobre o sinistro do Hospital São Rafael (jun/2025), comparado item a item com os "
                         "263 itens do gabarito de auditoria. Dados do case, sem alteração. IC 95% de Wilson.",
                         "**Precisão** = das glosas feitas, quantas eram indevidas. **Recall** = dos itens indevidos, quantos o agente glosou."],
@@ -448,14 +611,18 @@ FROM ops.v_ia_sanidade"""),
         _tabela("tb_ia", "ds_status_ia", COLS_STATUS, "Indicadores de IA", 0, 9),
     ]
     geral = [
-        _texto("t_geral", ["## Visão geral", "Quantos indicadores em cada status, por camada."], 0, 0),
-        _barra("b_resumo", "ds_resumo", "camada", "indicadores", "Indicadores por status", 0, 2, cor="status", w=6),
+        _texto("t_geral", ["## Visão geral", "Quantos indicadores em cada status, por seção."], 0, 0),
+        _barra("b_resumo", "ds_resumo", "secao", "indicadores", "Indicadores por status", 0, 2, cor="status", w=6),
     ]
     pg = lambda n, t, l: {"name": n, "displayName": t, "pageType": "PAGE_TYPE_CANVAS", "layout": l}  # noqa: E731
     return {"datasets": datasets,
-            "pages": [pg("negocio", "1 · Negócio", neg), pg("precisao_recall", "2 · Precisão e recall", pr),
-                      pg("semantica_dados", "3 · Semântica e dados", sem_dados),
-                      pg("ia", "4 · IA", ia), pg("geral", "5 · Visão geral", geral)]}
+            "pages": [pg("parte1_itens", "1 · Parte I · Itens de conta São Rafael", parte1),
+                      pg("precisao_recall", "2 · Parte I · Precisão e recall", pr),
+                      pg("parte2_funil", "3 · Parte II · Funil da rede", parte2),
+                      pg("parte2_planilha", "4 · Parte II · Inteligências (planilha 6 meses)", planilha),
+                      pg("sanidade", "5 · Sanidade · indicadores", sanidade),
+                      pg("semantica_dados", "6 · Semântica e dados", sem_dados),
+                      pg("ia", "7 · IA", ia), pg("geral", "8 · Visão geral", geral)]}
 
 
 def painel_bundle_yaml() -> str:
@@ -481,7 +648,7 @@ def runbooks_md(c: dict) -> str:
          "> GERADO por `python -m arvo.monitoring.gerar` a partir de [`indicadores.yaml`](indicadores.yaml). Não edite à mão.", "",
          "Severidade: **CRITICA** bloqueia o envio do run e alerta a cada hora · **ALTA** alerta diário, ação no dia ·"
          " **MEDIA** alerta diário, ação na semana · **INFO** só painel.", "",
-         "## Indicadores", "", "| Id | Camada | Indicador | Definição | Banda | Origem da banda | Severidade | Dono | Runbook |",
+         "## Indicadores", "", "| Id | Seção | Indicador | Definição | Banda | Origem da banda | Severidade | Dono | Runbook |",
          "|---|---|---|---|---|---|---|---|---|"]
     for i in spec["indicadores"]:
         b = banda(i, c)
@@ -490,7 +657,7 @@ def runbooks_md(c: dict) -> str:
         else:
             bt = " · ".join(x for x in [f"≥ {b['min']}" if "min" in b else "", f"≤ {b['max']}" if "max" in b else ""] if x)
         d = i.get("metrica") or (f"limite IA `{i['limite_ia']}`" if "limite_ia" in i else "SQL próprio")
-        L.append(f"| {i['id']} | {spec['camadas'][i['camada']]['titulo']} | {i['nome']} | {d} | {bt} | {b['origem']} | "
+        L.append(f"| {i['id']} | {secao(i, spec)[1]} | {i['nome']} | {d} | {bt} | {b['origem']} | "
                  f"{i['severidade']} | {i['dono']} | [{i['runbook']}](#{i['runbook'].lower()}) |")
     for rid, rb in spec["runbooks"].items():
         L += ["", f"## {rid}", "", f"**{rb['titulo']}**. Disparado por: " + ", ".join(rb["gatilho"]) + ".", ""]

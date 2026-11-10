@@ -6,29 +6,30 @@ Severidade: **CRITICA** bloqueia o envio do run e alerta a cada hora · **ALTA**
 
 ## Indicadores
 
-| Id | Camada | Indicador | Definição | Banda | Origem da banda | Severidade | Dono | Runbook |
+| Id | Seção | Indicador | Definição | Banda | Origem da banda | Severidade | Dono | Runbook |
 |---|---|---|---|---|---|---|---|---|
-| S01 | Negócio | Índice-norte (efetivado ÷ sinistro) | M20 | ≥ 0.02 | meta contratada da Parthenon (2% do sinistro) | ALTA | pm_cs | [RB-VALOR](#rb-valor) |
-| S02 | Negócio | Atingimento da meta (run-rate) | M19 | ≥ 0.8 | premissa AMB-21: 80% da trajetória planejada | ALTA | pm_cs | [RB-VALOR](#rb-valor) |
-| S03 | Negócio | Taxa de glosa sobre o apresentado, por regra | M03 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ (plano 9.1) | MEDIA | analytics_engineer | [RB-COMPORTAMENTO](#rb-comportamento) |
-| S04 | Negócio | Gap cobrado vs pactuado (R$) | M06 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ | INFO | especialista_contas_medicas | [RB-COBERTURA](#rb-cobertura) |
-| S05 | Negócio | Precisão auditada (ponderada), por regra | M10 | ≥ 0.98 | critério de go-live por regra (plano F10) | ALTA | cientista_dados | [RB-QUALIDADE](#rb-qualidade) |
-| S06 | Negócio | Limite inferior do IC 95% da precisão, por regra | SQL próprio | ≥ 0.95 | piso de envio automático (custos.yaml, AMB-20) | ALTA | cientista_dados | [RB-QUALIDADE](#rb-qualidade) |
-| S07 | Negócio | Indevido não detectado (ponderado) | M25 | ≤ 0.05 | premissa AMB-21 | MEDIA | cientista_dados | [RB-QUALIDADE](#rb-qualidade) |
-| S08 | Negócio | Taxa de recurso | M12 | ≤ 0.15 | premissa AMB-21 até existir benchmark por regra | ALTA | juridico | [RB-QUALIDADE](#rb-qualidade) |
-| S09 | Negócio | Taxa de reversão (precisão em campo) | M13 | ≤ 0.05 | critério de go-live (plano F10) | CRITICA | juridico | [RB-QUALIDADE](#rb-qualidade) |
-| S10 | Negócio | Ativação (identificado em ligadas ÷ total) | M22 | ±3σ das 6 competências anteriores (mín. 3) | banda histórica ±3σ | MEDIA | pm_cs | [RB-FUNIL](#rb-funil) |
-| S11 | Negócio | Envio à operadora (1 − retenção) | M23 | ±3σ das 6 competências anteriores (mín. 3) | banda histórica ±3σ | ALTA | pm_cs | [RB-FUNIL](#rb-funil) |
-| S12 | Negócio | Perda de registro no prestador | M17 | ≤ 0.05 | plano 9.1 (falha de integração) | ALTA | pm_cs | [RB-FUNIL](#rb-funil) |
-| S13 | Negócio | Efetivação ÷ benchmark Arvo, por inteligência | SQL próprio | ≥ 0.8 | premissa AMB-21: 80% do benchmark de efetivação da Arvo | MEDIA | juridico | [RB-FUNIL](#rb-funil) |
-| S14 | Negócio | Contas com glosa, por prestador | M05 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ do prestador | MEDIA | pm_cs | [RB-PRESTADOR](#rb-prestador) |
-| S15 | Negócio | Concentração da glosa nas 10 maiores contas | SQL próprio | ≤ 0.5 | premissa AMB-21 | INFO | pm_cs | [RB-PRESTADOR](#rb-prestador) |
-| S16 | Negócio | Itens glosados, por regra (hit rate) | M04 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ | MEDIA | analytics_engineer | [RB-COMPORTAMENTO](#rb-comportamento) |
-| S17 | Negócio | Cobertura de preço pactuado | M07 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ | MEDIA | especialista_contas_medicas | [RB-COBERTURA](#rb-cobertura) |
-| S18 | Negócio | Apontamentos que violam invariantes | M26 | ≤ 0 | invariante jurídico | CRITICA | juridico | [RB-INVARIANTE](#rb-invariante) |
-| S19 | Negócio | Itens com mais de uma glosa | SQL próprio | ≤ 0 | invariante: no máximo 1 glosa por item (grão do fato) | CRITICA | engenheiro_dados | [RB-INVARIANTE](#rb-invariante) |
-| S20 | Negócio | Contas com glosa maior que o cobrado | SQL próprio | ≤ 0 | invariante: Σ glosa da conta ≤ total da conta | CRITICA | juridico | [RB-INVARIANTE](#rb-invariante) |
-| S21 | Negócio | Apontamentos sem item auditado (órfãos) | SQL próprio | ≤ 0 | invariante: integridade referencial | CRITICA | engenheiro_dados | [RB-INVARIANTE](#rb-invariante) |
+| S01 | Parte II · Funil da rede Parthenon (6 meses) | Índice-norte da rede (efetivado ÷ sinistro da rede) | M20 | ≥ 0.02 | meta contratada da Parthenon (2% do sinistro) | ALTA | pm_cs | [RB-VALOR](#rb-valor) |
+| S02 | Parte II · Funil da rede Parthenon (6 meses) | Atingimento da meta da rede (run-rate) | M19 | ≥ 0.8 | premissa AMB-21: 80% da trajetória planejada | ALTA | pm_cs | [RB-VALOR](#rb-valor) |
+| S03 | Parte I · Agente · Hospital São Rafael (jun/2025) | Taxa de glosa sobre o apresentado, por regra | M03 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ (plano 9.1) | MEDIA | analytics_engineer | [RB-COMPORTAMENTO](#rb-comportamento) |
+| S04 | Parte I · Agente · Hospital São Rafael (jun/2025) | Gap cobrado vs pactuado (R$) | M06 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ | INFO | especialista_contas_medicas | [RB-COBERTURA](#rb-cobertura) |
+| S40 | Parte I · Agente · Hospital São Rafael (jun/2025) | Taxa de glosa identificada (glosado ÷ apresentado) | M03 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ do hospital; a taxa deve cair depois dos primeiros ciclos de glosa (RESPOSTAS_CASE, seção 4) | MEDIA | pm_cs | [RB-PRESTADOR](#rb-prestador) |
+| S05 | Parte I · Agente · Hospital São Rafael (jun/2025) | Precisão auditada (ponderada), por regra | M10 | ≥ 0.98 | critério de go-live por regra (plano F10) | ALTA | cientista_dados | [RB-QUALIDADE](#rb-qualidade) |
+| S06 | Parte I · Agente · Hospital São Rafael (jun/2025) | Limite inferior do IC 95% da precisão, por regra | SQL próprio | ≥ 0.95 | piso de envio automático (custos.yaml, AMB-20) | ALTA | cientista_dados | [RB-QUALIDADE](#rb-qualidade) |
+| S07 | Parte I · Agente · Hospital São Rafael (jun/2025) | Indevido não detectado (ponderado) | M25 | ≤ 0.05 | premissa AMB-21 | MEDIA | cientista_dados | [RB-QUALIDADE](#rb-qualidade) |
+| S08 | Parte I · Agente · Hospital São Rafael (jun/2025) | Taxa de recurso | M12 | ≤ 0.15 | premissa AMB-21 até existir benchmark por regra | ALTA | juridico | [RB-QUALIDADE](#rb-qualidade) |
+| S09 | Parte I · Agente · Hospital São Rafael (jun/2025) | Taxa de reversão (precisão em campo) | M13 | ≤ 0.05 | critério de go-live (plano F10) | CRITICA | juridico | [RB-QUALIDADE](#rb-qualidade) |
+| S10 | Parte II · Funil da rede Parthenon (6 meses) | Ativação (identificado em ligadas ÷ total) | M22 | ±3σ das 6 competências anteriores (mín. 3) | banda histórica ±3σ | MEDIA | pm_cs | [RB-FUNIL](#rb-funil) |
+| S11 | Parte II · Funil da rede Parthenon (6 meses) | Envio à operadora (1 − retenção) | M23 | ±3σ das 6 competências anteriores (mín. 3) | banda histórica ±3σ | ALTA | pm_cs | [RB-FUNIL](#rb-funil) |
+| S12 | Parte II · Funil da rede Parthenon (6 meses) | Perda de registro no prestador | M17 | ≤ 0.05 | plano 9.1 (falha de integração) | ALTA | pm_cs | [RB-FUNIL](#rb-funil) |
+| S13 | Parte II · Funil da rede Parthenon (6 meses) | Efetivação ÷ benchmark Arvo, por inteligência | SQL próprio | ≥ 0.8 | premissa AMB-21: 80% do benchmark de efetivação da Arvo | MEDIA | juridico | [RB-FUNIL](#rb-funil) |
+| S14 | Parte I · Agente · Hospital São Rafael (jun/2025) | Contas com glosa, por prestador | M05 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ do prestador | MEDIA | pm_cs | [RB-PRESTADOR](#rb-prestador) |
+| S15 | Parte I · Agente · Hospital São Rafael (jun/2025) | Concentração da glosa nas 10 maiores contas | SQL próprio | ≤ 0.5 | premissa AMB-21 | INFO | pm_cs | [RB-PRESTADOR](#rb-prestador) |
+| S16 | Parte I · Agente · Hospital São Rafael (jun/2025) | Itens glosados, por regra (hit rate) | M04 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ | MEDIA | analytics_engineer | [RB-COMPORTAMENTO](#rb-comportamento) |
+| S17 | Parte I · Agente · Hospital São Rafael (jun/2025) | Cobertura de preço pactuado | M07 | ±3σ das 6 competências anteriores (mín. 6) | banda histórica ±3σ | MEDIA | especialista_contas_medicas | [RB-COBERTURA](#rb-cobertura) |
+| S18 | Parte I · Agente · Hospital São Rafael (jun/2025) | Apontamentos que violam invariantes | M26 | ≤ 0 | invariante jurídico | CRITICA | juridico | [RB-INVARIANTE](#rb-invariante) |
+| S19 | Parte I · Agente · Hospital São Rafael (jun/2025) | Itens com mais de uma glosa | SQL próprio | ≤ 0 | invariante: no máximo 1 glosa por item (grão do fato) | CRITICA | engenheiro_dados | [RB-INVARIANTE](#rb-invariante) |
+| S20 | Parte I · Agente · Hospital São Rafael (jun/2025) | Contas com glosa maior que o cobrado | SQL próprio | ≤ 0 | invariante: Σ glosa da conta ≤ total da conta | CRITICA | juridico | [RB-INVARIANTE](#rb-invariante) |
+| S21 | Parte I · Agente · Hospital São Rafael (jun/2025) | Apontamentos sem item auditado (órfãos) | SQL próprio | ≤ 0 | invariante: integridade referencial | CRITICA | engenheiro_dados | [RB-INVARIANTE](#rb-invariante) |
 | S22 | Aderência semântica | Aderência semântica (itens com conceito) | M08 | ≥ 1.0 | meta da camada semântica (100%) | ALTA | analytics_engineer | [RB-SEMANTICA](#rb-semantica) |
 | S23 | Aderência semântica | Conflito semântico (ex.: PS × Eletivo) | M09 | ≤ 0.01 | premissa AMB-21 | MEDIA | especialista_contas_medicas | [RB-SEMANTICA](#rb-semantica) |
 | S24 | Aderência semântica | Versões da semântica num mesmo run | SQL próprio | ≤ 1 | invariante: um run, uma versão | CRITICA | analytics_engineer | [RB-SEMANTICA](#rb-semantica) |
@@ -58,8 +59,8 @@ Severidade: **CRITICA** bloqueia o envio do run e alerta a cada hora · **ALTA**
 
 Ação específica por indicador:
 
-- **S01** (Índice-norte (efetivado ÷ sinistro)): Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu
-- **S02** (Atingimento da meta (run-rate)): Reprojetar a trajetória com o Paulo; priorizar inteligências desligadas de maior valor
+- **S01** (Índice-norte da rede (efetivado ÷ sinistro da rede)): Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu
+- **S02** (Atingimento da meta da rede (run-rate)): Reprojetar a trajetória com o Paulo; priorizar inteligências desligadas de maior valor
 
 Escalonamento: PM/CS → Paulo (Parthenon) na reunião mensal.
 
@@ -101,7 +102,7 @@ Escalonamento: PM/CS → cliente (Dr. Ary, Alana ou Paulo, conforme a etapa).
 
 ## RB-PRESTADOR
 
-**Atrito com o prestador**. Disparado por: S14, S15.
+**Atrito com o prestador**. Disparado por: S14, S15, S40.
 
 1. Abrir as contas do prestador no run e conferir se uma regra concentra a glosa
 2. Validar com o Especialista se a cobrança mudou ou se a regra está agressiva
@@ -111,6 +112,7 @@ Ação específica por indicador:
 
 - **S14** (Contas com glosa, por prestador): Atrito desproporcional: conversar com o prestador antes do próximo envio
 - **S15** (Concentração da glosa nas 10 maiores contas): Concentração anômala: conferir se uma conta isolada distorce o run
+- **S40** (Taxa de glosa identificada (glosado ÷ apresentado)): A taxa não caiu depois das primeiras glosas: deixa de ser erro de implantação e vira assunto de relacionamento com o prestador
 
 Escalonamento: PM/CS → relacionamento com prestadores da Parthenon.
 

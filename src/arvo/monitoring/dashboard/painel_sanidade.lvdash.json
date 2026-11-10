@@ -2,9 +2,108 @@
   "datasets": [
     {
       "name": "ds_resumo",
-      "displayName": "Resumo por camada × status",
+      "displayName": "Resumo por seção × status",
       "queryLines": [
-        "SELECT camada_titulo AS camada, status, count(*) AS indicadores FROM ops.v_sanidade_status GROUP BY ALL\n"
+        "SELECT secao, status, count(*) AS indicadores FROM ops.v_sanidade_status GROUP BY ALL\n"
+      ]
+    },
+    {
+      "name": "ds_itens",
+      "displayName": "Parte I · itens de conta do São Rafael com a decisão do agente",
+      "queryLines": [
+        "SELECT s.id_prestador, s.id_item, s.id_conta, s.id_beneficiario_hash AS id_beneficiario_pseudonimo,\n",
+        "       s.dt_atendimento, s.carater_origem AS carater_atendimento, s.regime_origem AS tipo_conta, s.cod_tuss,\n",
+        "       s.desc_item_origem AS desc_item, s.tipo_item_origem AS tipo_item, s.qtd, s.vl_unitario, s.vl_total, s.nome_prestador,\n",
+        "       CASE WHEN i.glosado THEN 'Sim' ELSE 'Não' END AS glosado,\n",
+        "       CAST(coalesce(a.vl_glosado, 0) AS DECIMAL(12, 2)) AS vl_glosado,\n",
+        "       a.regra_principal, a.clausula_principal,\n",
+        "       CASE r.defensabilidade WHEN 'mais_forte' THEN 'Mais defensável' WHEN 'muito_forte' THEN 'Muito forte'\n",
+        "            WHEN 'forte_com_ressalva' THEN 'Forte, com ressalva' WHEN 'forte_fragil_em_ps' THEN 'Forte; frágil em Pronto Socorro'\n",
+        "            WHEN 'fragil' THEN 'Frágil' END AS defensabilidade,\n",
+        "       nullif(array_join(a.clausulas_subsidiarias, ', '), '') AS clausulas_subsidiarias,\n",
+        "       coalesce(a.justificativa, 'Sem glosa: nenhuma regra do contrato PRT-2025-0417 se aplica ao item.') AS justificativa,\n",
+        "       CASE WHEN a.id_item IS NULL THEN NULL\n",
+        "            WHEN a.status_envio = 'REVISAO_HUMANA' THEN concat('Revisão humana: ', a.motivo_revisao)\n",
+        "            WHEN d.destino_envio = 'NAO_ENVIAR' THEN 'Não enviada: regra em shadow (F10)'\n",
+        "            WHEN d.destino_envio = 'ENVIO_AUTOMATICO' THEN 'Envio automático'\n",
+        "            WHEN d.destino_envio IS NOT NULL THEN d.destino_envio\n",
+        "            ELSE 'Pronta; aguarda decisão do rollout' END AS situacao_glosa,\n",
+        "       CASE WHEN g.rotulado THEN CASE WHEN g.real THEN 'Sim' ELSE 'Não' END END AS gabarito_indevido\n",
+        "FROM silver.item_conta s\n",
+        "JOIN gold.fato_item_auditado i ON i.id_item = s.id_item\n",
+        "LEFT JOIN gold.fato_apontamento a ON a.id_item = s.id_item\n",
+        "LEFT JOIN gold.dim_regra r ON r.versao_regra = a.versao_regra\n",
+        "LEFT JOIN (SELECT id_apontamento, max_by(destino_envio, decidido_em) AS destino_envio\n",
+        "           FROM ops.rollout_destino GROUP BY id_apontamento) d ON d.id_apontamento = a.id_apontamento\n",
+        "LEFT JOIN gold.v_avaliacao_gabarito g ON g.id_item = s.id_item\n",
+        "ORDER BY s.id_conta, s.id_item\n"
+      ]
+    },
+    {
+      "name": "ds_planilha",
+      "displayName": "Parte II · planilha de inteligências (linha a linha)",
+      "queryLines": [
+        "WITH f AS (SELECT * FROM gold.fato_funil_economia WHERE competencia = (SELECT max(competencia) FROM gold.fato_funil_economia)),\n",
+        "linhas AS (\n",
+        "  SELECT 0 AS ordem, inteligencia, tipo_inteligencia AS tipo, status_inteligencia AS status, vl_identificado,\n",
+        "         vl_enviado_operadora, vl_enviado_prestador, vl_efetivado, taxa_efetivacao_benchmark,\n",
+        "         vl_identificado * taxa_efetivacao_benchmark AS vl_possivel\n",
+        "  FROM f\n",
+        "  UNION ALL\n",
+        "  SELECT 1, 'Total', '', '', sum(vl_identificado), sum(vl_enviado_operadora), sum(vl_enviado_prestador), sum(vl_efetivado),\n",
+        "         avg(taxa_efetivacao_benchmark), sum(vl_identificado * taxa_efetivacao_benchmark)\n",
+        "  FROM f)\n",
+        "SELECT inteligencia, tipo, status,\n",
+        "       round(vl_identificado, 2) AS economia_identificada, round(vl_enviado_operadora, 2) AS enviada_operadora,\n",
+        "       round(vl_enviado_prestador, 2) AS enviada_prestador, round(vl_efetivado, 2) AS economia_efetivada,\n",
+        "       round(100 * taxa_efetivacao_benchmark, 1) AS media_efetivacao_todos_clientes_pct,\n",
+        "       round(vl_possivel, 2) AS total_possivel, round(vl_possivel - vl_efetivado, 2) AS falta_para_o_possivel\n",
+        "FROM linhas ORDER BY ordem, CASE status WHEN 'Ligada' THEN 0 ELSE 1 END, vl_identificado DESC\n"
+      ]
+    },
+    {
+      "name": "ds_meta",
+      "displayName": "Parte II · meta e possível",
+      "queryLines": [
+        "WITH f AS (SELECT * FROM gold.fato_funil_economia WHERE competencia = (SELECT max(competencia) FROM gold.fato_funil_economia)),\n",
+        "t AS (SELECT sum(vl_identificado) AS ident, sum(vl_efetivado) AS efet,\n",
+        "             sum(vl_identificado * taxa_efetivacao_benchmark) AS poss, max(vl_sinistro_processado) AS sin FROM f)\n",
+        "SELECT round(sin, 2) AS sinistro_operadora, round(0.02 * sin, 2) AS meta_rs,\n",
+        "       round(efet, 2) AS economia_efetivada, round(100 * efet / sin, 2) AS efetivado_pct_sinistro,\n",
+        "       round(100 * efet / (0.02 * sin), 1) AS efetivado_pct_meta,\n",
+        "       round(poss, 2) AS total_possivel, round(100 * poss / sin, 2) AS possivel_pct_sinistro,\n",
+        "       round(100 * poss / (0.02 * sin), 1) AS possivel_pct_meta,\n",
+        "       round(ident, 2) AS economia_identificada, round(100 * ident / sin, 2) AS identificado_pct_sinistro\n",
+        "FROM t\n"
+      ]
+    },
+    {
+      "name": "ds_funil_etapas",
+      "displayName": "Parte II · funil em R$ (colunas da planilha)",
+      "queryLines": [
+        "WITH f AS (SELECT * FROM gold.fato_funil_economia WHERE competencia = (SELECT max(competencia) FROM gold.fato_funil_economia)),\n",
+        "t AS (SELECT CAST(sum(vl_identificado) AS DOUBLE) AS ident,\n",
+        "             CAST(sum(CASE WHEN status_inteligencia = 'Ligada' THEN vl_identificado END) AS DOUBLE) AS lig,\n",
+        "             CAST(sum(vl_enviado_operadora) AS DOUBLE) AS op, CAST(sum(vl_enviado_prestador) AS DOUBLE) AS pr,\n",
+        "             CAST(sum(vl_efetivado) AS DOUBLE) AS ef, CAST(max(vl_sinistro_processado) AS DOUBLE) AS sin FROM f)\n",
+        "SELECT etapa, round(valor, 2) AS valor_rs, round(100 * valor / sin, 2) AS pct_sinistro,\n",
+        "       round(100 * valor / ident, 1) AS pct_do_identificado, round(perda, 2) AS perda_rs, origem_da_perda\n",
+        "FROM t LATERAL VIEW stack(5,\n",
+        "  '1 · Identificada (26 inteligências)', ident, CAST(NULL AS DOUBLE), '',\n",
+        "  '2 · Identificada nas ligadas', lig, ident - lig, 'Inteligências com status Desligada: identificam, mas a planilha não registra envio',\n",
+        "  '3 · Enviada a operadora', op, lig - op, 'Identificada nas ligadas − Enviada a Operadora',\n",
+        "  '4 · Enviada para prestador', pr, op - pr, 'Enviada a Operadora − Enviada para Prestador',\n",
+        "  '5 · Efetivada', ef, pr - ef, 'Enviada para Prestador − Efetivado') s AS etapa, valor, perda, origem_da_perda\n",
+        "ORDER BY etapa\n"
+      ]
+    },
+    {
+      "name": "ds_parte1",
+      "displayName": "Parte I · glosa do agente no São Rafael",
+      "queryLines": [
+        "SELECT MEASURE(valor_glosado) AS valor_glosado, MEASURE(itens_glosados) AS itens_glosados,\n",
+        "       round(100 * MEASURE(taxa_glosa), 1) AS taxa_glosa_pct, MEASURE(valor_apresentado) AS valor_apresentado\n",
+        "FROM semantic.mv_auditoria_glosa\n"
       ]
     },
     {
@@ -17,7 +116,7 @@
     },
     {
       "name": "ds_norte",
-      "displayName": "Índice-norte e fatores (última competência)",
+      "displayName": "Parte II · índice-norte da rede (última competência)",
       "queryLines": [
         "SELECT competencia, round(100 * MEASURE(indice_norte), 2) AS indice_norte_pct,\n",
         "       round(100 * MEASURE(atingimento_meta), 1) AS atingimento_meta_pct,\n",
@@ -27,7 +126,7 @@
     },
     {
       "name": "ds_fatores",
-      "displayName": "Fatores do norte (M21 × M22 × M23 × M24 × M18)",
+      "displayName": "Parte II · fatores do norte (M21 × M22 × M23 × M24 × M18)",
       "queryLines": [
         "SELECT etapa, round(100 * taxa, 2) AS taxa_pct FROM (\n",
         "  SELECT competencia, MEASURE(taxa_identificacao) AS identificacao, MEASURE(taxa_ativacao) AS ativacao,\n",
@@ -87,10 +186,19 @@
       ]
     },
     {
-      "name": "ds_status_negocio",
-      "displayName": "Status · Negócio",
+      "name": "ds_status_sao_rafael",
+      "displayName": "Status · Parte I · Agente · Hospital São Rafael (jun/2025)",
       "queryLines": [
-        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE camada = 'negocio'\n",
+        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE escopo = 'sao_rafael'\n",
+        "ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,\n",
+        "         ordem, recorte\n"
+      ]
+    },
+    {
+      "name": "ds_status_rede",
+      "displayName": "Status · Parte II · Funil da rede Parthenon (6 meses)",
+      "queryLines": [
+        "SELECT status, id_indicador, nome, recorte, CAST(round(valor, 4) AS STRING) AS valor, CAST(round(banda_min, 4) AS STRING) AS banda_min, CAST(round(banda_max, 4) AS STRING) AS banda_max, severidade, dono, runbook, acao, ordem FROM ops.v_sanidade_status WHERE escopo = 'rede'\n",
         "ORDER BY CASE status WHEN 'ALERTA' THEN 0 WHEN 'SEM_DADO' THEN 1 WHEN 'CALIBRANDO' THEN 2 WHEN 'SEM_FONTE' THEN 3 ELSE 4 END,\n",
         "         ordem, recorte\n"
       ]
@@ -125,20 +233,20 @@
   ],
   "pages": [
     {
-      "name": "negocio",
-      "displayName": "1 · Negócio",
+      "name": "parte1_itens",
+      "displayName": "1 · Parte I · Itens de conta São Rafael",
       "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
           "widget": {
-            "name": "t_neg",
+            "name": "t_p1",
             "multilineTextboxSpec": {
               "lines": [
-                "## Sanidade · Negócio primeiro\n",
+                "## Parte I · Agente · Hospital São Rafael (jun/2025)\n",
                 "\n",
-                "Dados do case Arvo: sinistro e gabarito do Hospital São Rafael (jun/2025), contrato PRT-2025-0417 e planilha de inteligências (rede inteira, 6 meses). Nenhum dado gerado.\n",
+                "Cada linha é um item de conta do sinistro do Hospital São Rafael (jun/2025), com as colunas originais de `sinistro-hospital-saorafael.csv` e a decisão do agente: glosado ou não, valor, regra e cláusula, defensabilidade da regra principal e a justificativa.\n",
                 "\n",
-                "Valor, qualidade da decisão, funil, prestador e **invariantes**. Invariante em ALERTA **bloqueia o envio**. CALIBRANDO = banda dinâmica ainda sem histórico suficiente; SEM_FONTE = tabela ainda não existe.\n"
+                "Item em mais de uma regra: a principal é a de texto mais literal; as outras ficam como subsidiárias. Valor **identificado**, não economia: nenhuma glosa foi enviada ao prestador e nada disso entra no índice-norte da rede (Parte II). `gabarito_indevido` = rótulo do gabarito do case (263 itens).\n"
               ]
             }
           },
@@ -151,17 +259,17 @@
         },
         {
           "widget": {
-            "name": "c_bloq",
+            "name": "c_p1_valor",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_portao",
+                  "datasetName": "ds_parte1",
                   "disaggregated": true,
                   "fields": [
                     {
-                      "name": "bloqueios_de_envio",
-                      "expression": "`bloqueios_de_envio`"
+                      "name": "valor_glosado",
+                      "expression": "`valor_glosado`"
                     }
                   ]
                 }
@@ -172,13 +280,13 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "bloqueios_de_envio",
-                  "displayName": "Bloqueios de envio (deve ser 0)"
+                  "fieldName": "valor_glosado",
+                  "displayName": "Glosa identificada (R$)"
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Bloqueios de envio (deve ser 0)"
+                "title": "Glosa identificada (R$)"
               }
             }
           },
@@ -191,17 +299,17 @@
         },
         {
           "widget": {
-            "name": "c_norte",
+            "name": "c_p1_itens",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_norte",
+                  "datasetName": "ds_parte1",
                   "disaggregated": true,
                   "fields": [
                     {
-                      "name": "indice_norte_pct",
-                      "expression": "`indice_norte_pct`"
+                      "name": "itens_glosados",
+                      "expression": "`itens_glosados`"
                     }
                   ]
                 }
@@ -212,13 +320,13 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "indice_norte_pct",
-                  "displayName": "Índice-norte, % do sinistro (meta 2%)"
+                  "fieldName": "itens_glosados",
+                  "displayName": "Itens glosados (de 1.696)"
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Índice-norte, % do sinistro (meta 2%)"
+                "title": "Itens glosados (de 1.696)"
               }
             }
           },
@@ -231,17 +339,17 @@
         },
         {
           "widget": {
-            "name": "c_meta",
+            "name": "c_p1_taxa",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_norte",
+                  "datasetName": "ds_parte1",
                   "disaggregated": true,
                   "fields": [
                     {
-                      "name": "atingimento_meta_pct",
-                      "expression": "`atingimento_meta_pct`"
+                      "name": "taxa_glosa_pct",
+                      "expression": "`taxa_glosa_pct`"
                     }
                   ]
                 }
@@ -252,13 +360,13 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "atingimento_meta_pct",
-                  "displayName": "Atingimento da meta, %"
+                  "fieldName": "taxa_glosa_pct",
+                  "displayName": "% do sinistro do hospital"
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Atingimento da meta, %"
+                "title": "% do sinistro do hospital"
               }
             }
           },
@@ -271,56 +379,220 @@
         },
         {
           "widget": {
-            "name": "b_fatores",
+            "name": "tb_itens",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_fatores",
+                  "datasetName": "ds_itens",
                   "disaggregated": true,
                   "fields": [
                     {
-                      "name": "etapa",
-                      "expression": "`etapa`"
+                      "name": "id_prestador",
+                      "expression": "`id_prestador`"
                     },
                     {
-                      "name": "taxa_pct",
-                      "expression": "`taxa_pct`"
+                      "name": "id_item",
+                      "expression": "`id_item`"
+                    },
+                    {
+                      "name": "id_conta",
+                      "expression": "`id_conta`"
+                    },
+                    {
+                      "name": "id_beneficiario_pseudonimo",
+                      "expression": "`id_beneficiario_pseudonimo`"
+                    },
+                    {
+                      "name": "dt_atendimento",
+                      "expression": "`dt_atendimento`"
+                    },
+                    {
+                      "name": "carater_atendimento",
+                      "expression": "`carater_atendimento`"
+                    },
+                    {
+                      "name": "tipo_conta",
+                      "expression": "`tipo_conta`"
+                    },
+                    {
+                      "name": "cod_tuss",
+                      "expression": "`cod_tuss`"
+                    },
+                    {
+                      "name": "desc_item",
+                      "expression": "`desc_item`"
+                    },
+                    {
+                      "name": "tipo_item",
+                      "expression": "`tipo_item`"
+                    },
+                    {
+                      "name": "qtd",
+                      "expression": "`qtd`"
+                    },
+                    {
+                      "name": "vl_unitario",
+                      "expression": "`vl_unitario`"
+                    },
+                    {
+                      "name": "vl_total",
+                      "expression": "`vl_total`"
+                    },
+                    {
+                      "name": "nome_prestador",
+                      "expression": "`nome_prestador`"
+                    },
+                    {
+                      "name": "glosado",
+                      "expression": "`glosado`"
+                    },
+                    {
+                      "name": "vl_glosado",
+                      "expression": "`vl_glosado`"
+                    },
+                    {
+                      "name": "regra_principal",
+                      "expression": "`regra_principal`"
+                    },
+                    {
+                      "name": "clausula_principal",
+                      "expression": "`clausula_principal`"
+                    },
+                    {
+                      "name": "defensabilidade",
+                      "expression": "`defensabilidade`"
+                    },
+                    {
+                      "name": "clausulas_subsidiarias",
+                      "expression": "`clausulas_subsidiarias`"
+                    },
+                    {
+                      "name": "justificativa",
+                      "expression": "`justificativa`"
+                    },
+                    {
+                      "name": "situacao_glosa",
+                      "expression": "`situacao_glosa`"
+                    },
+                    {
+                      "name": "gabarito_indevido",
+                      "expression": "`gabarito_indevido`"
                     }
                   ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "bar",
+              "version": 2,
+              "widgetType": "table",
               "encodings": {
-                "x": {
-                  "fieldName": "etapa",
-                  "scale": {
-                    "type": "categorical"
+                "columns": [
+                  {
+                    "fieldName": "id_prestador",
+                    "displayName": "id_prestador"
                   },
-                  "displayName": "etapa"
-                },
-                "y": {
-                  "fieldName": "taxa_pct",
-                  "scale": {
-                    "type": "quantitative"
+                  {
+                    "fieldName": "id_item",
+                    "displayName": "id_item"
                   },
-                  "displayName": "taxa_pct"
-                }
+                  {
+                    "fieldName": "id_conta",
+                    "displayName": "id_conta"
+                  },
+                  {
+                    "fieldName": "id_beneficiario_pseudonimo",
+                    "displayName": "id_beneficiario_pseudonimo"
+                  },
+                  {
+                    "fieldName": "dt_atendimento",
+                    "displayName": "dt_atendimento"
+                  },
+                  {
+                    "fieldName": "carater_atendimento",
+                    "displayName": "carater_atendimento"
+                  },
+                  {
+                    "fieldName": "tipo_conta",
+                    "displayName": "tipo_conta"
+                  },
+                  {
+                    "fieldName": "cod_tuss",
+                    "displayName": "cod_tuss"
+                  },
+                  {
+                    "fieldName": "desc_item",
+                    "displayName": "desc_item"
+                  },
+                  {
+                    "fieldName": "tipo_item",
+                    "displayName": "tipo_item"
+                  },
+                  {
+                    "fieldName": "qtd",
+                    "displayName": "qtd"
+                  },
+                  {
+                    "fieldName": "vl_unitario",
+                    "displayName": "vl_unitario"
+                  },
+                  {
+                    "fieldName": "vl_total",
+                    "displayName": "vl_total"
+                  },
+                  {
+                    "fieldName": "nome_prestador",
+                    "displayName": "nome_prestador"
+                  },
+                  {
+                    "fieldName": "glosado",
+                    "displayName": "glosado"
+                  },
+                  {
+                    "fieldName": "vl_glosado",
+                    "displayName": "vl_glosado"
+                  },
+                  {
+                    "fieldName": "regra_principal",
+                    "displayName": "regra_principal"
+                  },
+                  {
+                    "fieldName": "clausula_principal",
+                    "displayName": "clausula_principal"
+                  },
+                  {
+                    "fieldName": "defensabilidade",
+                    "displayName": "defensabilidade"
+                  },
+                  {
+                    "fieldName": "clausulas_subsidiarias",
+                    "displayName": "clausulas_subsidiarias"
+                  },
+                  {
+                    "fieldName": "justificativa",
+                    "displayName": "justificativa"
+                  },
+                  {
+                    "fieldName": "situacao_glosa",
+                    "displayName": "situacao_glosa"
+                  },
+                  {
+                    "fieldName": "gabarito_indevido",
+                    "displayName": "gabarito_indevido"
+                  }
+                ]
               },
               "frame": {
                 "showTitle": true,
-                "title": "Fatores do norte (% em cada etapa)"
+                "title": "Itens de conta · São Rafael · decisão do agente"
               }
             }
           },
           "position": {
             "x": 0,
             "y": 6,
-            "width": 3,
-            "height": 6
+            "width": 6,
+            "height": 16
           }
         },
         {
@@ -371,139 +643,17 @@
             }
           },
           "position": {
-            "x": 3,
-            "y": 6,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "tb_neg",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_status_negocio",
-                  "disaggregated": true,
-                  "fields": [
-                    {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
-                      "name": "id_indicador",
-                      "expression": "`id_indicador`"
-                    },
-                    {
-                      "name": "nome",
-                      "expression": "`nome`"
-                    },
-                    {
-                      "name": "recorte",
-                      "expression": "`recorte`"
-                    },
-                    {
-                      "name": "valor",
-                      "expression": "`valor`"
-                    },
-                    {
-                      "name": "banda_min",
-                      "expression": "`banda_min`"
-                    },
-                    {
-                      "name": "banda_max",
-                      "expression": "`banda_max`"
-                    },
-                    {
-                      "name": "severidade",
-                      "expression": "`severidade`"
-                    },
-                    {
-                      "name": "dono",
-                      "expression": "`dono`"
-                    },
-                    {
-                      "name": "runbook",
-                      "expression": "`runbook`"
-                    },
-                    {
-                      "name": "acao",
-                      "expression": "`acao`"
-                    }
-                  ]
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "table",
-              "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "status",
-                    "displayName": "status"
-                  },
-                  {
-                    "fieldName": "id_indicador",
-                    "displayName": "id_indicador"
-                  },
-                  {
-                    "fieldName": "nome",
-                    "displayName": "nome"
-                  },
-                  {
-                    "fieldName": "recorte",
-                    "displayName": "recorte"
-                  },
-                  {
-                    "fieldName": "valor",
-                    "displayName": "valor"
-                  },
-                  {
-                    "fieldName": "banda_min",
-                    "displayName": "banda_min"
-                  },
-                  {
-                    "fieldName": "banda_max",
-                    "displayName": "banda_max"
-                  },
-                  {
-                    "fieldName": "severidade",
-                    "displayName": "severidade"
-                  },
-                  {
-                    "fieldName": "dono",
-                    "displayName": "dono"
-                  },
-                  {
-                    "fieldName": "runbook",
-                    "displayName": "runbook"
-                  },
-                  {
-                    "fieldName": "acao",
-                    "displayName": "acao"
-                  }
-                ]
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Indicadores de negócio"
-              }
-            }
-          },
-          "position": {
             "x": 0,
-            "y": 12,
+            "y": 22,
             "width": 6,
-            "height": 10
+            "height": 5
           }
         }
       ]
     },
     {
       "name": "precisao_recall",
-      "displayName": "2 · Precisão e recall",
+      "displayName": "2 · Parte I · Precisão e recall",
       "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
@@ -511,7 +661,7 @@
             "name": "t_pr",
             "multilineTextboxSpec": {
               "lines": [
-                "## Precisão e recall · gabarito do case\n",
+                "## Parte I · Precisão e recall · gabarito do case\n",
                 "\n",
                 "Motor de regras sobre o sinistro do Hospital São Rafael (jun/2025), comparado item a item com os 263 itens do gabarito de auditoria. Dados do case, sem alteração. IC 95% de Wilson.\n",
                 "\n",
@@ -895,8 +1045,1019 @@
       ]
     },
     {
+      "name": "parte2_funil",
+      "displayName": "3 · Parte II · Funil da rede",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_p2",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Parte II · Funil da rede Parthenon (6 meses)\n",
+                "\n",
+                "Funil de economia da operação inteira, como está em `Inteligencias_apos_6_meses.xlsx`. Não depende do agente da Parte I.\n",
+                "\n",
+                "Cada etapa é uma coluna da planilha: Identificada → (só as ligadas) → Enviada a Operadora → Enviada para Prestador → Efetivado. A perda de cada etapa é a diferença entre duas colunas. **Índice-norte** = efetivado ÷ sinistro da operadora (meta 2%).\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_norte",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_norte",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "indice_norte_pct",
+                      "expression": "`indice_norte_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "indice_norte_pct",
+                  "displayName": "Índice-norte da rede, % (meta 2%)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Índice-norte da rede, % (meta 2%)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_meta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_norte",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "atingimento_meta_pct",
+                      "expression": "`atingimento_meta_pct`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "atingimento_meta_pct",
+                  "displayName": "Atingimento da meta, %"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Atingimento da meta, %"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_efet",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_norte",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "economia_efetivada",
+                      "expression": "`economia_efetivada`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "economia_efetivada",
+                  "displayName": "Economia efetivada (R$/mês)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Economia efetivada (R$/mês)"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "b_funil",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_funil_etapas",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "etapa",
+                      "expression": "`etapa`"
+                    },
+                    {
+                      "name": "valor_rs",
+                      "expression": "`valor_rs`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "etapa",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "etapa"
+                },
+                "y": {
+                  "fieldName": "valor_rs",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "valor_rs"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Funil em R$ (colunas da planilha)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_funil",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_funil_etapas",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "etapa",
+                      "expression": "`etapa`"
+                    },
+                    {
+                      "name": "valor_rs",
+                      "expression": "`valor_rs`"
+                    },
+                    {
+                      "name": "pct_sinistro",
+                      "expression": "`pct_sinistro`"
+                    },
+                    {
+                      "name": "pct_do_identificado",
+                      "expression": "`pct_do_identificado`"
+                    },
+                    {
+                      "name": "perda_rs",
+                      "expression": "`perda_rs`"
+                    },
+                    {
+                      "name": "origem_da_perda",
+                      "expression": "`origem_da_perda`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "etapa",
+                    "displayName": "etapa"
+                  },
+                  {
+                    "fieldName": "valor_rs",
+                    "displayName": "valor_rs"
+                  },
+                  {
+                    "fieldName": "pct_sinistro",
+                    "displayName": "pct_sinistro"
+                  },
+                  {
+                    "fieldName": "pct_do_identificado",
+                    "displayName": "pct_do_identificado"
+                  },
+                  {
+                    "fieldName": "perda_rs",
+                    "displayName": "perda_rs"
+                  },
+                  {
+                    "fieldName": "origem_da_perda",
+                    "displayName": "origem_da_perda"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Etapas e perdas"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "parte2_planilha",
+      "displayName": "4 · Parte II · Inteligências (planilha 6 meses)",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_pl",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Parte II · Inteligências da Arvo · planilha de 6 meses\n",
+                "\n",
+                "Uma linha por inteligência, com as colunas da planilha. **total_possivel** = economia identificada × média de efetivação de todos os clientes Arvo (duas colunas da planilha): quanto a inteligência renderia ligada e com todo o identificado chegando ao prestador. Meta = 2% do sinistro processado da operadora.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_pl_efet",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_meta",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "economia_efetivada",
+                      "expression": "`economia_efetivada`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "economia_efetivada",
+                  "displayName": "Efetivado hoje (R$/mês)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Efetivado hoje (R$/mês)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_pl_efet_sin",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_meta",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "efetivado_pct_sinistro",
+                      "expression": "`efetivado_pct_sinistro`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "efetivado_pct_sinistro",
+                  "displayName": "Efetivado, % do sinistro"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Efetivado, % do sinistro"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_pl_efet_meta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_meta",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "efetivado_pct_meta",
+                      "expression": "`efetivado_pct_meta`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "efetivado_pct_meta",
+                  "displayName": "Quanto da meta de 2% já atingimos, %"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Quanto da meta de 2% já atingimos, %"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_pl_poss",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_meta",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "total_possivel",
+                      "expression": "`total_possivel`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_possivel",
+                  "displayName": "Possível com todas as inteligências (R$/mês)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Possível com todas as inteligências (R$/mês)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_pl_poss_sin",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_meta",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "possivel_pct_sinistro",
+                      "expression": "`possivel_pct_sinistro`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "possivel_pct_sinistro",
+                  "displayName": "Possível, % do sinistro"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Possível, % do sinistro"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 6,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_pl_poss_meta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_meta",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "possivel_pct_meta",
+                      "expression": "`possivel_pct_meta`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "possivel_pct_meta",
+                  "displayName": "Possível, % da meta"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Possível, % da meta"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 6,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_planilha",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_planilha",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "inteligencia",
+                      "expression": "`inteligencia`"
+                    },
+                    {
+                      "name": "tipo",
+                      "expression": "`tipo`"
+                    },
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "economia_identificada",
+                      "expression": "`economia_identificada`"
+                    },
+                    {
+                      "name": "enviada_operadora",
+                      "expression": "`enviada_operadora`"
+                    },
+                    {
+                      "name": "enviada_prestador",
+                      "expression": "`enviada_prestador`"
+                    },
+                    {
+                      "name": "economia_efetivada",
+                      "expression": "`economia_efetivada`"
+                    },
+                    {
+                      "name": "media_efetivacao_todos_clientes_pct",
+                      "expression": "`media_efetivacao_todos_clientes_pct`"
+                    },
+                    {
+                      "name": "total_possivel",
+                      "expression": "`total_possivel`"
+                    },
+                    {
+                      "name": "falta_para_o_possivel",
+                      "expression": "`falta_para_o_possivel`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "inteligencia",
+                    "displayName": "inteligencia"
+                  },
+                  {
+                    "fieldName": "tipo",
+                    "displayName": "tipo"
+                  },
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "economia_identificada",
+                    "displayName": "economia_identificada"
+                  },
+                  {
+                    "fieldName": "enviada_operadora",
+                    "displayName": "enviada_operadora"
+                  },
+                  {
+                    "fieldName": "enviada_prestador",
+                    "displayName": "enviada_prestador"
+                  },
+                  {
+                    "fieldName": "economia_efetivada",
+                    "displayName": "economia_efetivada"
+                  },
+                  {
+                    "fieldName": "media_efetivacao_todos_clientes_pct",
+                    "displayName": "media_efetivacao_todos_clientes_pct"
+                  },
+                  {
+                    "fieldName": "total_possivel",
+                    "displayName": "total_possivel"
+                  },
+                  {
+                    "fieldName": "falta_para_o_possivel",
+                    "displayName": "falta_para_o_possivel"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Inteligências · linha a linha (última linha = total)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 12
+          }
+        }
+      ]
+    },
+    {
+      "name": "sanidade",
+      "displayName": "5 · Sanidade · indicadores",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_san",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Sanidade · indicadores de negócio\n",
+                "\n",
+                "Status de cada indicador, separado por parte. Invariante em ALERTA **bloqueia o envio**. CALIBRANDO = banda dinâmica ainda sem histórico; SEM_FONTE = tabela ainda não existe.\n"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c_bloq",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_portao",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "bloqueios_de_envio",
+                      "expression": "`bloqueios_de_envio`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "bloqueios_de_envio",
+                  "displayName": "Bloqueios de envio (deve ser 0)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Bloqueios de envio (deve ser 0)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_alertas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_portao",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "indicadores_em_alerta",
+                      "expression": "`indicadores_em_alerta`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "indicadores_em_alerta",
+                  "displayName": "Indicadores em alerta"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Indicadores em alerta"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_p1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_status_sao_rafael",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "id_indicador",
+                      "expression": "`id_indicador`"
+                    },
+                    {
+                      "name": "nome",
+                      "expression": "`nome`"
+                    },
+                    {
+                      "name": "recorte",
+                      "expression": "`recorte`"
+                    },
+                    {
+                      "name": "valor",
+                      "expression": "`valor`"
+                    },
+                    {
+                      "name": "banda_min",
+                      "expression": "`banda_min`"
+                    },
+                    {
+                      "name": "banda_max",
+                      "expression": "`banda_max`"
+                    },
+                    {
+                      "name": "severidade",
+                      "expression": "`severidade`"
+                    },
+                    {
+                      "name": "dono",
+                      "expression": "`dono`"
+                    },
+                    {
+                      "name": "runbook",
+                      "expression": "`runbook`"
+                    },
+                    {
+                      "name": "acao",
+                      "expression": "`acao`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "id_indicador",
+                    "displayName": "id_indicador"
+                  },
+                  {
+                    "fieldName": "nome",
+                    "displayName": "nome"
+                  },
+                  {
+                    "fieldName": "recorte",
+                    "displayName": "recorte"
+                  },
+                  {
+                    "fieldName": "valor",
+                    "displayName": "valor"
+                  },
+                  {
+                    "fieldName": "banda_min",
+                    "displayName": "banda_min"
+                  },
+                  {
+                    "fieldName": "banda_max",
+                    "displayName": "banda_max"
+                  },
+                  {
+                    "fieldName": "severidade",
+                    "displayName": "severidade"
+                  },
+                  {
+                    "fieldName": "dono",
+                    "displayName": "dono"
+                  },
+                  {
+                    "fieldName": "runbook",
+                    "displayName": "runbook"
+                  },
+                  {
+                    "fieldName": "acao",
+                    "displayName": "acao"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Indicadores · Parte I · São Rafael"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "tb_p2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_status_rede",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "id_indicador",
+                      "expression": "`id_indicador`"
+                    },
+                    {
+                      "name": "nome",
+                      "expression": "`nome`"
+                    },
+                    {
+                      "name": "recorte",
+                      "expression": "`recorte`"
+                    },
+                    {
+                      "name": "valor",
+                      "expression": "`valor`"
+                    },
+                    {
+                      "name": "banda_min",
+                      "expression": "`banda_min`"
+                    },
+                    {
+                      "name": "banda_max",
+                      "expression": "`banda_max`"
+                    },
+                    {
+                      "name": "severidade",
+                      "expression": "`severidade`"
+                    },
+                    {
+                      "name": "dono",
+                      "expression": "`dono`"
+                    },
+                    {
+                      "name": "runbook",
+                      "expression": "`runbook`"
+                    },
+                    {
+                      "name": "acao",
+                      "expression": "`acao`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "id_indicador",
+                    "displayName": "id_indicador"
+                  },
+                  {
+                    "fieldName": "nome",
+                    "displayName": "nome"
+                  },
+                  {
+                    "fieldName": "recorte",
+                    "displayName": "recorte"
+                  },
+                  {
+                    "fieldName": "valor",
+                    "displayName": "valor"
+                  },
+                  {
+                    "fieldName": "banda_min",
+                    "displayName": "banda_min"
+                  },
+                  {
+                    "fieldName": "banda_max",
+                    "displayName": "banda_max"
+                  },
+                  {
+                    "fieldName": "severidade",
+                    "displayName": "severidade"
+                  },
+                  {
+                    "fieldName": "dono",
+                    "displayName": "dono"
+                  },
+                  {
+                    "fieldName": "runbook",
+                    "displayName": "runbook"
+                  },
+                  {
+                    "fieldName": "acao",
+                    "displayName": "acao"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Indicadores · Parte II · rede"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 10
+          }
+        }
+      ]
+    },
+    {
       "name": "semantica_dados",
-      "displayName": "3 · Semântica e dados",
+      "displayName": "6 · Semântica e dados",
       "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
@@ -1165,7 +2326,7 @@
     },
     {
       "name": "ia",
-      "displayName": "4 · IA",
+      "displayName": "7 · IA",
       "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
@@ -1379,7 +2540,7 @@
     },
     {
       "name": "geral",
-      "displayName": "5 · Visão geral",
+      "displayName": "8 · Visão geral",
       "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
@@ -1389,7 +2550,7 @@
               "lines": [
                 "## Visão geral\n",
                 "\n",
-                "Quantos indicadores em cada status, por camada.\n"
+                "Quantos indicadores em cada status, por seção.\n"
               ]
             }
           },
@@ -1411,8 +2572,8 @@
                   "disaggregated": true,
                   "fields": [
                     {
-                      "name": "camada",
-                      "expression": "`camada`"
+                      "name": "secao",
+                      "expression": "`secao`"
                     },
                     {
                       "name": "indicadores",
@@ -1431,11 +2592,11 @@
               "widgetType": "bar",
               "encodings": {
                 "x": {
-                  "fieldName": "camada",
+                  "fieldName": "secao",
                   "scale": {
                     "type": "categorical"
                   },
-                  "displayName": "camada"
+                  "displayName": "secao"
                 },
                 "y": {
                   "fieldName": "indicadores",

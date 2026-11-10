@@ -5,24 +5,24 @@
 
 **Portão de envio: LIBERADO**
 
-| Camada | OK | ALERTA | CALIBRANDO | SEM_DADO | SEM_FONTE |
+| Seção | OK | ALERTA | CALIBRANDO | SEM_DADO | SEM_FONTE |
 |---|---|---|---|---|---|
-| Negócio | 20 | 11 | 38 | 0 | 2 |
+| Parte I · Agente · Hospital São Rafael (jun/2025) | 6 | 8 | 12 | 0 | 2 |
+| Parte II · Funil da rede Parthenon (6 meses) | 14 | 3 | 27 | 0 | 0 |
 | Aderência semântica | 3 | 1 | 0 | 0 | 0 |
 | Engenharia de dados | 7 | 0 | 0 | 0 | 0 |
 | IA | 0 | 0 | 0 | 10 | 0 |
 
-## Negócio
+## Parte I · Agente · Hospital São Rafael (jun/2025)
 
 | Status | Id | Indicador | Recorte | Valor | Banda | Sev. | Dono | Ação |
 |---|---|---|---|---|---|---|---|---|
-| **ALERTA** | S01 | Índice-norte (efetivado ÷ sinistro) | total | 0,48% | ≥ 2,00% | ALTA | pm_cs | Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu |
-| **ALERTA** | S02 | Atingimento da meta (run-rate) | total | 23,98% | ≥ 80,00% | ALTA | pm_cs | Reprojetar a trajetória com o Paulo; priorizar inteligências desligadas de maior valor |
 | **CALIBRANDO** | S03 | Taxa de glosa sobre o apresentado, por regra | regra_principal=R1 | 19,93% | histórico 0/6 | MEDIA | analytics_engineer |  |
 | **CALIBRANDO** | S03 | Taxa de glosa sobre o apresentado, por regra | regra_principal=R2 | 100,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
 | **CALIBRANDO** | S03 | Taxa de glosa sobre o apresentado, por regra | regra_principal=R3 | 100,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
 | **CALIBRANDO** | S03 | Taxa de glosa sobre o apresentado, por regra | regra_principal=R4 | 100,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
 | **CALIBRANDO** | S04 | Gap cobrado vs pactuado (R$) | total | R$ 39.875,41 | histórico 0/6 | INFO | especialista_contas_medicas |  |
+| **CALIBRANDO** | S40 | Taxa de glosa identificada (glosado ÷ apresentado) | total | 10,21% | histórico 0/6 | MEDIA | pm_cs |  |
 | **ALERTA** | S05 | Precisão auditada (ponderada), por regra | regra_principal=R1 | 92,38% | ≥ 98,00% | ALTA | cientista_dados | Regra em envio automático cai para REVISAO_HUMANA (kill switch da regra) |
 | **ALERTA** | S05 | Precisão auditada (ponderada), por regra | regra_principal=R2 | 90,21% | ≥ 98,00% | ALTA | cientista_dados | Regra em envio automático cai para REVISAO_HUMANA (kill switch da regra) |
 | **ALERTA** | S05 | Precisão auditada (ponderada), por regra | regra_principal=R3 | 96,92% | ≥ 98,00% | ALTA | cientista_dados | Regra em envio automático cai para REVISAO_HUMANA (kill switch da regra) |
@@ -34,6 +34,24 @@
 | **ALERTA** | S07 | Indevido não detectado (ponderado) | total | 13,98% | ≤ 5,00% | MEDIA | cientista_dados | Abrir os FN da rodada: regra nova (vira AMB) ou ruído de rotulagem (teste de concentração F8) |
 | **SEM_FONTE** | S08 | Taxa de recurso | total | — | — | ALTA | juridico |  |
 | **SEM_FONTE** | S09 | Taxa de reversão (precisão em campo) | total | — | — | CRITICA | juridico |  |
+| **CALIBRANDO** | S14 | Contas com glosa, por prestador | id_prestador=P001 | 65,00% | histórico 0/6 | MEDIA | pm_cs |  |
+| **OK** | S15 | Concentração da glosa nas 10 maiores contas | total | 17,69% | ≤ 50,00% | INFO | pm_cs |  |
+| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R1 | 17500,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
+| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R2 | 5000,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
+| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R3 | 6700,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
+| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R4 | 7700,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
+| **CALIBRANDO** | S17 | Cobertura de preço pactuado | total | 100,00% | histórico 0/6 | MEDIA | especialista_contas_medicas |  |
+| **OK** | S18 | Apontamentos que violam invariantes | total | 0 | ≤ 0 | CRITICA | juridico |  |
+| **OK** | S19 | Itens com mais de uma glosa | total | 0 | ≤ 0 | CRITICA | engenheiro_dados |  |
+| **OK** | S20 | Contas com glosa maior que o cobrado | total | 0 | ≤ 0 | CRITICA | juridico |  |
+| **OK** | S21 | Apontamentos sem item auditado (órfãos) | total | 0 | ≤ 0 | CRITICA | engenheiro_dados |  |
+
+## Parte II · Funil da rede Parthenon (6 meses)
+
+| Status | Id | Indicador | Recorte | Valor | Banda | Sev. | Dono | Ação |
+|---|---|---|---|---|---|---|---|---|
+| **ALERTA** | S01 | Índice-norte da rede (efetivado ÷ sinistro da rede) | total | 0,48% | ≥ 2,00% | ALTA | pm_cs | Abrir a árvore do norte (M21 × M22 × M23 × M24 × M18) e atacar o fator que mais caiu |
+| **ALERTA** | S02 | Atingimento da meta da rede (run-rate) | total | 23,98% | ≥ 80,00% | ALTA | pm_cs | Reprojetar a trajetória com o Paulo; priorizar inteligências desligadas de maior valor |
 | **CALIBRANDO** | S10 | Ativação (identificado em ligadas ÷ total) | total | 50,12% | histórico 0/3 | MEDIA | pm_cs |  |
 | **CALIBRANDO** | S11 | Envio à operadora (1 − retenção) | inteligencia=Alto Markup | — | histórico 0/3 | ALTA | pm_cs |  |
 | **CALIBRANDO** | S11 | Envio à operadora (1 − retenção) | inteligencia=Cobrança em excesso de anatomia patológica | — | histórico 0/3 | ALTA | pm_cs |  |
@@ -76,17 +94,6 @@
 | **OK** | S13 | Efetivação ÷ benchmark Arvo, por inteligência | inteligencia=Sobreposição de consultas | 103,41% | ≥ 80,00% | MEDIA | juridico |  |
 | **OK** | S13 | Efetivação ÷ benchmark Arvo, por inteligência | inteligencia=Sobreposição de procedimentos cirúrgicos | 98,95% | ≥ 80,00% | MEDIA | juridico |  |
 | **OK** | S13 | Efetivação ÷ benchmark Arvo, por inteligência | inteligencia=Sobreposição de taxas | 107,85% | ≥ 80,00% | MEDIA | juridico |  |
-| **CALIBRANDO** | S14 | Contas com glosa, por prestador | id_prestador=P001 | 65,00% | histórico 0/6 | MEDIA | pm_cs |  |
-| **OK** | S15 | Concentração da glosa nas 10 maiores contas | total | 17,69% | ≤ 50,00% | INFO | pm_cs |  |
-| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R1 | 17500,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
-| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R2 | 5000,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
-| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R3 | 6700,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
-| **CALIBRANDO** | S16 | Itens glosados, por regra (hit rate) | regra_principal=R4 | 7700,00% | histórico 0/6 | MEDIA | analytics_engineer |  |
-| **CALIBRANDO** | S17 | Cobertura de preço pactuado | total | 100,00% | histórico 0/6 | MEDIA | especialista_contas_medicas |  |
-| **OK** | S18 | Apontamentos que violam invariantes | total | 0 | ≤ 0 | CRITICA | juridico |  |
-| **OK** | S19 | Itens com mais de uma glosa | total | 0 | ≤ 0 | CRITICA | engenheiro_dados |  |
-| **OK** | S20 | Contas com glosa maior que o cobrado | total | 0 | ≤ 0 | CRITICA | juridico |  |
-| **OK** | S21 | Apontamentos sem item auditado (órfãos) | total | 0 | ≤ 0 | CRITICA | engenheiro_dados |  |
 
 ## Aderência semântica
 

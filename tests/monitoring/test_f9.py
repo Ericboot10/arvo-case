@@ -44,6 +44,16 @@ def test_especificacao_valida_e_negocio_primeiro(c):
     neg = [i for i in inds if i["camada"] == "negocio"]
     assert len(neg) > max(sum(i["camada"] == k for i in inds) for k in ("semantica", "dados", "ia"))
     assert {i["familia"] for i in neg} >= {"valor", "qualidade_decisao", "funil", "relacao_prestador", "invariantes"}
+    escopo = {i["id"]: i["escopo"] for i in neg}
+    assert escopo["S01"] == escopo["S02"] == "rede" and escopo["S40"] == escopo["S03"] == "sao_rafael"
+
+
+def test_escopo_errado_e_pego(c):
+    c2 = _so(c, "S01", "S40")
+    c2["spec"]["indicadores"][0]["escopo"] = "sao_rafael"               # índice-norte da rede marcado como São Rafael
+    del c2["spec"]["indicadores"][1]["escopo"]
+    erros = "\n".join(gerar.validar(c2))
+    assert "S01: escopo sao_rafael diverge da fonte" in erros and "S40: indicador de negócio sem escopo" in erros
 
 
 def test_validar_pega_erros_de_governanca(c):
@@ -107,7 +117,14 @@ def test_painel_lvdash_consistente():
     p = json.loads(gerar.SAIDAS["painel"].read_text("utf-8"))
     ds = {d["name"]: "".join(d["queryLines"]) for d in p["datasets"]}
     assert not any("arvo_" in q for q in ds.values())        # catálogo vem do bundle (dataset_catalog), por target
-    assert [pg["displayName"] for pg in p["pages"]][0].endswith("Negócio")
+    paginas = [pg["displayName"] for pg in p["pages"]]
+    assert paginas[0].endswith("Parte I · Itens de conta São Rafael") and "3 · Parte II · Funil da rede" in paginas
+    w = {i["widget"]["name"]: i["widget"] for pg in p["pages"] for i in pg["layout"]}
+    pag = {i["widget"]["name"]: pg["name"] for pg in p["pages"] for i in pg["layout"]}
+    assert pag["c_norte"] == "parte2_funil" and pag["c_p1_valor"] == pag["tb_itens"] == "parte1_itens"   # partes não se misturam
+    assert pag["tb_planilha"] == "parte2_planilha" and "id_beneficiario_pseudonimo" in ds["ds_itens"]       # ADR-006
+    assert "id_beneficiario," not in ds["ds_itens"] and "bronze." not in ds["ds_itens"]
+    assert "escopo = 'rede'" in ds[w["tb_p2"]["queries"][0]["query"]["datasetName"]]
     nomes = []
     for pg in p["pages"]:
         for item in pg["layout"]:
@@ -185,6 +202,9 @@ def test_avaliacao_local_com_dados_reais(c, spark):
     um = lambda i: por[i][0]  # noqa: E731
     assert {i["id"] for i in c["spec"]["indicadores"]} == set(por)          # todo indicador aparece
     assert um("S01")["status"] == "ALERTA" and um("S01")["valor"] == pytest.approx(0.0048, abs=1e-4)   # 0,48% vs meta 2%
+    assert um("S01")["secao"].startswith("Parte II") and um("S40")["secao"].startswith("Parte I ")
+    assert um("S40")["valor"] == pytest.approx(121948.93 / 1194396.92, abs=1e-6) and um("S40")["status"] == "CALIBRANDO"   # 10,2%
+    assert max(r["ordem"] for r in rows if r["escopo"] == "sao_rafael") < min(r["ordem"] for r in rows if r["escopo"] == "rede")
     assert um("S12")["status"] == "ALERTA" and um("S12")["valor"] == pytest.approx(0.3037, abs=1e-3)   # perda de registro
     for inv in ("S18", "S19", "S20", "S21", "S24", "S25", "S26"):
         assert all(r["status"] == "OK" for r in por[inv]), inv
